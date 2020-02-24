@@ -1,0 +1,14 @@
+spring:
+  profiles:
+    active: dev
+  application:
+    name: femts
+  thymeleaf:
+    servlet:
+      content-type: text/html
+    cache: false
+    mode: LEGACYHTML5
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
