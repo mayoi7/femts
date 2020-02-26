@@ -72,24 +72,24 @@ public class UserController {
     /**
      * 发送重置密码邮件</br>
      * 会根据用户名和随机数生成一段hash码，作为重置密码的唯一凭证，存储到缓存中
-     * @param username 用户名
+     * @param email 邮箱
      * @return code为200说明请求重置成功，否则说明未发送重置邮件，请重试
      */
-    @PostMapping("/password/reset/{username}")
-    public ResultVO requestResetPassword(@PathVariable("username") String username) {
-        User user = userService.findByCondition(username, UserQueryCondition.USERNAME);
+    @PostMapping("/password/reset")
+    public ModelAndView requestResetPassword(@RequestParam("email") String email) {
+        User user = userService.findByCondition(email, UserQueryCondition.EMAIL);
         if (user == null) {
-            log.error("[USER] user not found <username: {}>", username);
-            return new ResultVO(BAD_REQUEST, "用户名不存在");
+            log.error("[USER] user not found <username: {}>", email);
+            throw new ParamException("邮箱不存在");
         }
-        String email = user.getEmail();
+        String username = user.getUsername();
         // 生成一段随机数，作为重置密码的唯一凭证，并将凭证存储到缓存中设置10分钟过期
         String code = TokenUtils.generateSingleMark();
         // 不同用户的缓存key不同（因为不同用户的过期时间不同）
         redisService.set(RedisKeys.PASSWORD_RESET_KEY + username, code, 60*10);
         emailService.sendResetPasswordMail(email, "/api/1.0/user/password/redirect?code=" + code
                 + "&username=" + username);
-        return ResultVO.SUCCESS;
+        return new ModelAndView("redirect:/login");
     }
 
     /**
@@ -112,7 +112,7 @@ public class UserController {
         }
         // 拿缓存key作为session key
         session.setAttribute(RedisKeys.PASSWORD_RESET_KEY, username);
-        return new ModelAndView("redirect: /password/reset");
+        return new ModelAndView("redirect:/password/reset");
     }
 
     @PostMapping("password")
