@@ -86,6 +86,21 @@ public class UserServiceImpl implements UserService {
             log.warn("[USER] reject save null data");
             return null;
         }
+        // 避免恶意修改时间信息
+        user.setCreatedAt(null);
+        user.setModifiedAt(null);
+        return userRepository.save(user);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @CachePut(cacheNames = "user", key = "#user.username")
+    public User updateUser(Long userId, User user) {
+        // jpa的save会自动触发查询userId是否存在，所以不要做额外的检查操作
+        if (user == null || user.getId() == null) {
+            log.warn("[USER] reject update null data <<maybe user is null or user_id is null>>");
+            return null;
+        }
         return userRepository.save(user);
     }
 }

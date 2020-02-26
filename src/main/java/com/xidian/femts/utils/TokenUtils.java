@@ -42,6 +42,16 @@ public class TokenUtils {
     }
 
     /**
+     * 加密明文密码
+     * @param password 密码（明文）
+     * @param username 用户名（盐值）
+     * @return 加密后的密码
+     */
+    public static String encryptPassword(String password, String username) {
+        return generateToken(password, username).toString();
+    }
+
+    /**
      * 生成UUID
      *
      * @return UUID

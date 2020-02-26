@@ -37,4 +37,9 @@ public class BaseController {
     public ResultVO health() {
         return new ResultVO("success");
     }
+
+    @GetMapping
+    public String passwordReset() {
+        return "/reset-password";
+    }
 }

@@ -6,6 +6,7 @@ import com.xidian.femts.entity.User;
 import com.xidian.femts.service.EmailService;
 import com.xidian.femts.service.LoginService;
 import com.xidian.femts.service.UserService;
+import com.xidian.femts.utils.TokenUtils;
 import com.xidian.femts.vo.ResultVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.SecurityUtils;
@@ -138,13 +139,15 @@ public class AuthController {
                                @Email(regexp = "^(\\w-*\\.*)+@(\\w-?)+(\\.\\w{2,})+$")
                                    @RequestParam("email") String email) {
         // 先校验参数合法性
-        // TODO: 2020/2/22 重写校验规则
         if (!validUsername(username) || !validPassword(password) || !validPhone(phone)) {
             return new ResultVO("参数不合规范，请重新检查");
         }
 
+        // 加密密码
+        String encrypted = TokenUtils.encryptPassword(password, username);
+
         User user = User.builder()
-                .username(username).password(password)
+                .username(username).password(encrypted)
                 .jobId(jobId).phone(phone).email(email)
                 .build();
         User record = userService.saveUser(user);

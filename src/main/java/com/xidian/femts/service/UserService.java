@@ -12,7 +12,8 @@ import com.xidian.femts.entity.User;
 public interface UserService {
 
     /**
-     * 根据单个条件查询用户对象
+     * 根据单个条件查询用户对象</br>
+     * 因为查询不到数据时往往是调用方参数错误，所以在方法内不打印日志，由调用方自行打印
      * @param param 查询参数（不能为空）
      * @param condition 查询条件
      * @return 数据表中的数据对象，如果为空表示无数据
@@ -33,4 +34,11 @@ public interface UserService {
      */
     User saveUser(User user);
 
+    /**
+     * 更新用户信息
+     * @param userId 用户id（和user中数据一致，放在参数中仅为提醒调用方注意userId不能为空）
+     * @param user 用户信息（将会将该数据<b>覆盖</b>数据表中记录，所以该数据需要调用方先从数据库中查询）
+     * @return 返回更新后的用户信息
+     */
+    User updateUser(Long userId, User user);
 }
