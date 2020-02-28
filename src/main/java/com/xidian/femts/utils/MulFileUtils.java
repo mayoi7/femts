@@ -51,12 +51,12 @@ public class MulFileUtils {
             int buf_size = 1024;
             byte[] buffer = new byte[buf_size];
             int len = 0;
-            while((len = in.read(buffer,0,buf_size)) != -1){
+            while((len = in.read(buffer,0, buf_size)) != -1){
                 bos.write(buffer,0,len);
             }
             return bos.toByteArray();
         } catch (IOException e) {
-            log.error("[FILE] 文件转换字节数组异常");
+            log.error("[FILE] file convert to bytes failed <file_path: {}>", file.getPath());
             throw e;
         }
     }

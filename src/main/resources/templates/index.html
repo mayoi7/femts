@@ -3,22 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <title>金融文稿追溯系统</title>
-    <link rel="stylesheet" href="../static/vendor/element-ui/element-ui.css">
     <link rel="stylesheet" href="../static/vendor/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="../static/vendor/element-ui/lib/theme-chalk/index.css">
     <link rel="stylesheet" href="../static/css/femts.min.css">
     <link rel="stylesheet" href="../static/css/index.css">
+    <style>
+        .container .side-bar {
+            float: left;
+            display: inline-block;
+            width: 22%;
+            min-height: 600px;
+            border-right: 2px solid #c7c7c7;
+            border-radius: 2px;
+        }
+
+        .el-tree {
+            width: 100%;
+            min-height: 600px;
+            overflow-x: scroll;
+            overflow-y: hidden;
+            padding-right: 20px;
+        }
+
+        .el-tree>.el-tree-node {
+            display: inline-block;
+            min-width: 100%;
+        }
+
+        .container .frame {
+            float: left;
+            width: 78%;
+            display: inline-block;
+            min-height: 600px;
+        }
+
+        .container .side-bar span.el-tree-node__label {
+            font-size: 15px;
+        }
+    </style>
 </head>
 <body>
 <div id="app" @click="close_all">
-    <!-- Top bar -->
     <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
 
-        <!-- Sidebar Toggle (Topbar) -->
         <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
             <i class="fa fa-bars"></i>
         </button>
 
-        <!-- Topbar Search -->
         <form class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
             <div class="input-group">
                 <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..." aria-label="Search" aria-describedby="basic-addon2">
@@ -30,15 +61,11 @@
             </div>
         </form>
 
-        <!-- Topbar Navbar -->
         <ul class="navbar-nav ml-auto">
-
-            <!-- Nav Item - Search Dropdown (Visible Only XS) -->
             <li class="nav-item dropdown no-arrow d-sm-none">
                 <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <i class="fas fa-search fa-fw"></i>
                 </a>
-                <!-- Dropdown - Messages -->
                 <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in" aria-labelledby="searchDropdown">
                     <form class="form-inline mr-auto w-100 navbar-search">
                         <div class="input-group">
@@ -53,15 +80,12 @@
                 </div>
             </li>
 
-            <!-- Nav Item - Alerts -->
             <li class="nav-item dropdown no-arrow mx-1">
                 <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown"
                    aria-haspopup="true" :aria-expanded="show_alert" @click.stop="show_alert=!show_alert">
                     <i class="fas fa-bell fa-fw"></i>
-                    <!-- Counter - Alerts -->
                     <span class="badge badge-danger badge-counter">3+</span>
                 </a>
-                <!-- Dropdown - Alerts -->
                 <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
                      aria-labelledby="alertsDropdown" :class="{show:show_alert}">
                     <h6 class="dropdown-header">
@@ -82,13 +106,11 @@
                 </div>
             </li>
             <div class="topbar-divider d-none d-sm-block"></div>
-            <!-- Nav Item - User Information -->
             <li class="nav-item dropdown no-arrow">
                 <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
                    aria-haspopup="true" :aria-expanded="show_setting" @click.stop="show_setting=!show_setting">
                     <span class="mr-2 d-none d-lg-inline text-gray-600 small">Test User</span>
                 </a>
-                <!-- Dropdown - User Information -->
                 <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown"
                     :class="{show:show_setting}">
                     <a class="dropdown-item" href="#">
@@ -108,13 +130,23 @@
             </li>
         </ul>
     </nav>
+
+    <div class="container" style="max-width: 80rem">
+        <div class="side-bar">
+            <el-tree :load="loadNodes" lazy :props="props"></el-tree>
+        </div>
+        <div class="frame" id="docFrame" v-html="docHTML">
+            <div>{{docHTML}}</div>
+        </div>
+        <div style="clear: both"></div>
+    </div>
 </div>
 </body>
 <script charset="utf-8" src="../static/vendor/kindeditor/kindeditor-all-min.js"></script>
 <script charset="utf-8" src="../static/vendor/kindeditor/lang/zh-CN.js"></script>
 <script src="../static/vendor/vue/vue.min.js"></script>
 <script src="../static/vendor/jquery/jquery.min.js"></script>
-<script src="../static/vendor/element-ui/element-ui.js"></script>
+<script src="../static/vendor/element-ui/lib/index.js"></script>
 <script src="../static/js/femts.min.js"></script>
 <script>
     KindEditor.options.filterMode = false;
@@ -124,19 +156,45 @@
 
     new Vue({
         el: '#app',
-        data: function () {
+        data () {
             return {
-                "show_alert": false,
-                "show_setting": false
+                show_alert: false,
+                show_setting: false,
+                props: {
+                    label: 'name',
+                    children: 'zones',
+                    isLeaf: 'leaf'
+                },
+                docHTML: ``
             }
         },
         methods: {
             close_all: function () {
                 this.$data.show_alert = false;
                 this.$data.show_setting = false;
+            },
+            handleNodeClick(data) {
+                console.log(data);
+            },
+            loadNodes(node, resolve) {
+                if (node.level === 0) {
+                    return resolve([{ name: '金融企业文稿追溯系统' }]);
+                }
+                // if (node.level > 1) return resolve([]);
+
+                // 模拟网络获取
+                setTimeout(() => {
+                    const data = [{
+                        name: '金融企业文稿追溯系统节点1',
+                        leaf: true
+                    }, {
+                        name: 'user username password 统标题2'
+                    }];
+
+                    resolve(data);
+                }, 500);
             }
         }
     });
-
 </script>
 </html>
