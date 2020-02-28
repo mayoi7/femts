@@ -14,7 +14,7 @@ log/
 *.yaml
 
 ### Test Files ###
-**/test/*
+#**/test/*
 
 ### Except ###
 !application.yml
@@ -22,6 +22,7 @@ log/
 !/src/main/resources/static/*
 !/src/main/resources/templates/*.html
 !.mvn/wrapper/maven-wrapper.jar
+!pom.xml
 
 ### STS ###
 .apt_generated
