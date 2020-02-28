@@ -10,7 +10,12 @@ import javax.persistence.*;
 import java.io.Serializable;
 
 /**
- * 文档目录表
+ * 文档目录表<br>
+ * 文档系统结构：<br/>
+ *     目录<br/>
+ *     &emsp;|-- 文档<br/>
+ *     &emsp;|-- 目录<br/>
+ *     &emsp;&emsp;&emsp;|-- 文档
  *
  * @date 19:51:30 2020-01-16 
  * @author  liuhaonan
