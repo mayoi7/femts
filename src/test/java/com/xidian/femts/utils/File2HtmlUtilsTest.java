@@ -3,7 +3,6 @@ package com.xidian.femts.utils;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.util.Arrays;
 
 /**
  * @author LiuHaonan
@@ -30,7 +29,7 @@ class File2HtmlUtilsTest {
     @Test
     void testConvertPdfToHTML() throws Exception {
         File file = new File("file/temp/001.pdf");
-        byte[] bytes = MulFileUtils.changeToBytes(file);
+        byte[] bytes = MulFileUtils.changeFileToBytes(file);
         String content = File2HtmlUtils.convertPdfToHTML(bytes);
         System.out.println(content);
     }

@@ -19,7 +19,8 @@ public enum FileType implements CodeEnum {
     TXT("txt", 2),
     PDF("pdf", 3),
     OFD("ofd", 4),
-    OTHER("unknown", 5);
+    RTF("rtf", 5),
+    OTHER("unknown", 6);
 
     private String name;
 
