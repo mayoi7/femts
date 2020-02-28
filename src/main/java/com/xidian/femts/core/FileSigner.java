@@ -67,11 +67,22 @@ public class FileSigner {
     public String signZipFile(String path, byte[] bytes) {
         // 计算文件的hash码
         String hash = hashBytes(MD5, bytes);
-        File signFile = new File(HASH_FILE_DIR + "$" + hash);
+        File signFile = new File(HASH_FILE_DIR + "$" + hash + ".xml");
         // 失败重试一次
-        if (!signFile.mkdir()) {
-            if (!signFile.mkdir()) {
-                log.error("[FILE] create hash file failed <try: 1>");
+        try {
+            // 本来这里直接创建文件夹会更好，但是XWPFDocument当docx中出现文件夹时会报错
+            if (!signFile.createNewFile()) {
+                // 返回false说明已经存在同名文件
+                log.error("[FILE] hash file has existed <path: {}>", signFile.getPath());
+            }
+        } catch (IOException ioe) {
+            // 如果抛出异常说明目录不存在（磁盘IO异常发生概率相对较小，仅重试一次即可）
+            log.warn("[FILE] io exception occurred when create file <path: {}>", signFile.getPath(), ioe);
+            try {
+                signFile.createNewFile();
+            } catch (IOException ioe2) {
+                log.error("[FILE] file path not existed <path: {}>", signFile.getPath(), ioe2);
+                return null;
             }
         }
         ZipUtils.addFile(path, signFile);
@@ -113,7 +124,8 @@ public class FileSigner {
             log.info("[FILE] this file have not set signer <file_path: {}>", path);
             return null;
         } else {
-            return fileHash.substring(1, fileHash.length() - 1);
+            // 过滤掉开头的 $ 和结尾的 .xml
+            return fileHash.substring(1, fileHash.length() - 5);
         }
     }
 

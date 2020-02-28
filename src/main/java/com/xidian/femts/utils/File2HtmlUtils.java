@@ -1,5 +1,6 @@
 package com.xidian.femts.utils;
 
+import com.xidian.femts.constants.FileType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,19 +41,35 @@ public class File2HtmlUtils {
      * @param fileType 文件类型
      * @return 返回html标签/div标签；如果返回null则说明转换出现异常
      */
-//    private String convertFileBytesToHTML(byte[] bytes, FileType fileType) {
-//        switch (fileType) {
-//            case WORD2007:
-//                File file = MulFileUtils.c
-//        }
-//    }
+    public String convertFileBytesToHTML(byte[] bytes, FileType fileType) {
+        switch (fileType) {
+            case WORD2007:
+                File docx = MulFileUtils.changeBytesToFile(bytes, true);
+                return convertWord2007ToHTML(docx);
+            case WORD2003:
+                File doc = MulFileUtils.changeBytesToFile(bytes, true);
+                return convertWord2003ToHTML(doc);
+            case PDF:
+                return convertPdfToHTML(bytes);
+            case TXT:
+                return convertTxtToHTML(bytes);
+            case OFD:
+            case RTF:
+                // 后续添加这两种文件的支持
+                return null;
+            case OTHER:
+            default:
+                // 暂时不支持其他文件格式
+                return null;
+        }
+    }
 
     /**
      * 将word2007文件转换为html代码
      * @param file docx文件
      * @return 返回一个div标签，内部是word文件转换后的代码；如果发生异常则返回null
      */
-    public static String convertWord2007ToHTML(File file) {
+    private static String convertWord2007ToHTML(File file) {
         // 加载word文档生成 XWPFDocument对象
         try(InputStream in = new FileInputStream(file);
             ByteArrayOutputStream out = new ByteArrayOutputStream()
@@ -76,7 +93,6 @@ public class File2HtmlUtils {
             log.error("[FILE] docx create converter failed <file_path: {}>", file.getPath(), ioe);
             return null;
         }
-
     }
 
     /**
@@ -84,7 +100,7 @@ public class File2HtmlUtils {
      * @param file doc文件
      * @return 返回一个html标签，内部是word文件转换后的代码；如果发生异常则返回null
      */
-    public static String convertWord2003ToHTML(File file) {
+    private static String convertWord2003ToHTML(File file) {
         try (InputStream input = new FileInputStream(file);
              ByteArrayOutputStream baos = new ByteArrayOutputStream()
         ) {
@@ -119,7 +135,7 @@ public class File2HtmlUtils {
      * @param bytes 文件字节数组
      * @return 返回一个div，内部是word文件转换后的代码；如果发生异常则返回null
      */
-    public static String convertPdfToHTML(byte[] bytes)  {
+    private static String convertPdfToHTML(byte[] bytes)  {
         try (
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 BufferedWriter out = new BufferedWriter(new OutputStreamWriter(baos, StandardCharsets.UTF_8))){
@@ -143,7 +159,7 @@ public class File2HtmlUtils {
      * @param bytes 文件字节数组
      * @return 返回一个字符串，表示文件内容；如果发生异常则返回null
      */
-    public static String convertTxtToHTML(byte[] bytes) {
+    private static String convertTxtToHTML(byte[] bytes) {
         return new String(bytes);
     }
 }

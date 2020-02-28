@@ -80,7 +80,7 @@ public class ManuscriptServiceImpl implements ManuscriptService {
                     hash = fileSigner.signZipFile(file.getPath(), bytes);
                     try {
                         // 返回新字节数组
-                        bytes = MulFileUtils.changeToBytes(file);
+                        bytes = MulFileUtils.changeFileToBytes(file);
                     } catch (IOException e) {
                         return new JudgeResult<>(false, new FileSigner.FileData(bytes, hash));
                     }

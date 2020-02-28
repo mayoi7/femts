@@ -25,7 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 
-import static com.xidian.femts.utils.MulFileUtils.changeToFile;
+import static com.xidian.femts.utils.MulFileUtils.changeMulFileToFile;
 import static com.xidian.femts.utils.TokenUtils.generateSingleMark;
 import static org.springframework.http.HttpStatus.*;
 
@@ -113,7 +113,7 @@ public class FileSystemController {
             case TXT:
             case OTHER:
             default:
-                file = changeToFile(mulFile);break;
+                file = changeMulFileToFile(mulFile);break;
         }
         if (file == null) {
             return new ResultVO(INTERNAL_SERVER_ERROR, "文件数据异常");
