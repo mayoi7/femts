@@ -43,7 +43,7 @@ public class File2HtmlUtils {
 //    private String convertFileBytesToHTML(byte[] bytes, FileType fileType) {
 //        switch (fileType) {
 //            case WORD2007:
-//                File file = MulFileUtils.c
+//                File file = MulFileUtils.changeBytesToFile(bytes);
 //        }
 //    }
 
