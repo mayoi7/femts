@@ -60,4 +60,21 @@ public class MulFileUtils {
             throw e;
         }
     }
+
+    public static File changeBytesToFile(byte[] bytes) {
+        File file = new File("file/temp/007.docx");
+        try (OutputStream output = new FileOutputStream(file);
+             BufferedOutputStream bufferedOutput = new BufferedOutputStream(output);
+        ) {
+            bufferedOutput.write(bytes);
+            return file;
+        } catch (FileNotFoundException fne) {
+            log.error("[FILE] file not found");
+            return null;
+        } catch (IOException ioe) {
+            log.error("[FILE] file stream write error");
+            return null;
+        }
+
+    }
 }
