@@ -17,7 +17,7 @@ public interface DirectoryService {
      * @param id 目录id（directory表主键），禁止为空
      * @return {@link DirList}表示的目录数据结构
      */
-    DirList listTitles(Long id);
+    DirList listDirectories(Long id);
 
     /**
      * 根据id查找

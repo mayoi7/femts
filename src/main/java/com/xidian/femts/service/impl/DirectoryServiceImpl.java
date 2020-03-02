@@ -33,7 +33,7 @@ public class DirectoryServiceImpl implements DirectoryService {
     }
 
     @Override
-    public DirList listTitles(Long id) {
+    public DirList listDirectories(Long id) {
         Directory directory = directoryRepository.getById(id);
         if (directory == null) {
             log.warn("[DIR] no directory with such id <id: {}>", id);
@@ -55,7 +55,7 @@ public class DirectoryServiceImpl implements DirectoryService {
         dirIds.forEach(ele -> directories.add(findNameById(Long.parseLong(ele))));
         docIds.forEach(ele -> manuscripts.add(manuscriptService.findTitleById(Long.parseLong(ele))));
 
-        return new DirList(directories, manuscripts);
+        return new DirList(id, directories, manuscripts);
     }
 
     @Override
