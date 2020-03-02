@@ -152,16 +152,6 @@ public class ManuscriptController {
         }
         return new ResultVO(directories);
     }
-
-    /**
-     * 获取当前登陆用户的私人空间目录结构
-     * @param id 目录id，如果为空则获取最上层目录
-     * @return 目录结构
-     */
-    @GetMapping("/list/private/{id}")
-    public ResultVO listPrivateDirectory(@PathVariable(value = "id", required = false) Long id) {
-        return null;
-    }
 }
 
 
