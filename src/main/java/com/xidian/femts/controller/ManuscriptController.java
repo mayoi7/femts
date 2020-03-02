@@ -123,12 +123,13 @@ public class ManuscriptController {
     }
 
     /**
-     * 获取公共空间某目录下的目录结构
+     * 获取当前登陆用户可视空间某目录下的目录结构
      * @param id 目录id，如果为空则获取最上层目录
      * @return 目录结构
      */
-    @GetMapping("/list/public/{id}")
-    public ResultVO listPublicDirectory(@PathVariable(value = "id", required = false) Long id) {
+    @GetMapping("/list/{id}")
+    public ResultVO listVisibleDirectory(@PathVariable(value = "id", required = false) Long id) {
+
         return null;
     }
 
