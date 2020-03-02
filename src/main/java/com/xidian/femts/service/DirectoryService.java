@@ -26,4 +26,14 @@ public interface DirectoryService {
      * @return 数据表中对象
      */
     Directory findById(Long id);
+
+    /**
+     * 添加空目录
+     * @param name 目录名
+     * @param parentId 父目录id
+     * @param userId 创建人id
+     * @param visible 是否公开，true：是
+     * @return 创建后的目录
+     */
+    Directory createEmptyDirectory(String name, Long parentId, Long userId, boolean visible);
 }

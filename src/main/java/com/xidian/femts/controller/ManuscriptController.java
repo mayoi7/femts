@@ -2,6 +2,7 @@ package com.xidian.femts.controller;
 
 import com.xidian.femts.constants.UserQueryCondition;
 import com.xidian.femts.constants.UserState;
+import com.xidian.femts.entity.Directory;
 import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.entity.Permission;
 import com.xidian.femts.entity.User;
@@ -133,7 +134,7 @@ public class ManuscriptController {
      * @param id 目录id，如果为空则获取最上层目录
      * @return 目录结构
      */
-    @GetMapping("/list/{id}")
+    @GetMapping("/directory/list/{id}")
     public ResultVO listVisibleDirectory(@PathVariable(value = "id", required = false) Long id) {
         if (id == null) {
             // 如果id不存在，则赋予根目录id
@@ -151,6 +152,32 @@ public class ManuscriptController {
             return new ResultVO(BAD_REQUEST, "目录不存在");
         }
         return new ResultVO(directories);
+    }
+
+    /**
+     * 在目录下添加新目录
+     * @param id 父目录id
+     * @param name 目录名称
+     * @return 添加成功返回SUCCESS标记
+     */
+    @PostMapping("/directory/append/{id}")
+    public ResultVO appendDirectory(@PathVariable("id") Long id, @RequestParam("name") String name,
+                                    @RequestParam("visible") boolean visible) {
+        String username = TokenUtils.getLoggedUserInfo();
+        User user = userService.findByCondition(username, UserQueryCondition.USERNAME);
+        if (user == null) {
+            log.error("[USER] logged user not found <username: {}>", username);
+            return new ResultVO(INTERNAL_SERVER_ERROR, "登陆状态异常");
+        }
+        // 返回值用于确认是否保存成功
+        Directory directory = directoryService.createEmptyDirectory(name, id, user.getId(), visible);
+        if (directory == null) {
+            log.error("[DIR] directory create failed <name: {}, parent_id: {}, username: {}>",
+                    name, id, username);
+            return new ResultVO(BAD_REQUEST, "保存失败");
+        } else {
+            return ResultVO.SUCCESS;
+        }
     }
 }
 

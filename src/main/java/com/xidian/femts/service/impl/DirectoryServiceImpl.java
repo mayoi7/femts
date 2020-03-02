@@ -9,6 +9,7 @@ import com.xidian.femts.vo.DirList;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -86,5 +87,18 @@ public class DirectoryServiceImpl implements DirectoryService {
             log.warn("[DIR] no directory with such id <id: {}>", id);
             return null;
         });
+    }
+
+    @Override
+    public Directory createEmptyDirectory(String name, Long parentId, Long userId, boolean visible) {
+        if (StringUtils.isEmpty(name) || parentId == null || userId == null) {
+            log.error("[DIR] params should not be null <name: {}, parentId: {}, userId: {}>",
+                    name, parentId, userId);
+            return null;
+        }
+        Directory directory = Directory.builder()
+                .name(name).parent(parentId).visible(visible).createdBy(userId)
+                .build();
+        return directoryRepository.save(directory);
     }
 }

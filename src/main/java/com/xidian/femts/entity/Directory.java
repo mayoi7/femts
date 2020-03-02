@@ -1,6 +1,7 @@
 package com.xidian.femts.entity;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.DynamicInsert;
@@ -25,6 +26,7 @@ import java.util.Date;
 @Entity
 @Table ( name ="directory" , schema = "")
 @Data
+@Builder
 @DynamicInsert
 @DynamicUpdate
 @AllArgsConstructor
@@ -62,8 +64,9 @@ public class Directory implements Serializable {
 	 * 均对目录所属人之外不可见；
 	 * 当目录设置为公开时，则遵循文档及目录的可视级别来进行判断
 	 */
+	@Builder.Default
 	@Column(name = "visible")
-	private Boolean visible;
+	private Boolean visible = false;
 
 	/** 目录创建人id */
 	@Column(name = "created_by")
