@@ -8,6 +8,7 @@ import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * 文档目录表<br>
@@ -55,15 +56,20 @@ public class Directory implements Serializable {
    	@Column(name = "docs" )
 	private String docs;
 
-	@Override
-	public String toString() {
-		return "{" +
-					"id='" + id + '\'' +
-					"name='" + name + '\'' +
-					"parent='" + parent + '\'' +
-					"subs='" + subs + '\'' +
-					"docs='" + docs + '\'' +
-				'}';
-	}
+	/**
+	 * 目录是否公开，true：公开。<br/>
+	 * 区别于文档安全级别，当目录设置为不公开时，目录下的所有文档安全级别无论设置为什么，
+	 * 均对目录所属人之外不可见；
+	 * 当目录设置为公开时，则遵循文档及目录的可视级别来进行判断
+	 */
+	@Column(name = "visible")
+	private Boolean visible;
 
+	/** 目录创建人id */
+	@Column(name = "created_by")
+	private Long createdBy;
+
+	/** 目录创建时间 */
+	@Column(name = "created_at")
+	private Date createdAt;
 }

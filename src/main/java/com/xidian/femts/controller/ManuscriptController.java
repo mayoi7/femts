@@ -5,9 +5,12 @@ import com.xidian.femts.constants.UserState;
 import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.entity.Permission;
 import com.xidian.femts.entity.User;
+import com.xidian.femts.service.DirectoryService;
 import com.xidian.femts.service.ManuscriptService;
 import com.xidian.femts.service.PermissionService;
 import com.xidian.femts.service.UserService;
+import com.xidian.femts.utils.TokenUtils;
+import com.xidian.femts.vo.DirList;
 import com.xidian.femts.vo.ReadWritePermission;
 import com.xidian.femts.vo.ResultVO;
 import lombok.extern.slf4j.Slf4j;
@@ -32,10 +35,13 @@ public class ManuscriptController {
 
     private final UserService userService;
 
-    public ManuscriptController(ManuscriptService manuscriptService, PermissionService permissionService, UserService userService) {
+    private final DirectoryService directoryService;
+
+    public ManuscriptController(ManuscriptService manuscriptService, PermissionService permissionService, UserService userService, DirectoryService directoryService) {
         this.manuscriptService = manuscriptService;
         this.permissionService = permissionService;
         this.userService = userService;
+        this.directoryService = directoryService;
     }
 
 
@@ -129,8 +135,22 @@ public class ManuscriptController {
      */
     @GetMapping("/list/{id}")
     public ResultVO listVisibleDirectory(@PathVariable(value = "id", required = false) Long id) {
-
-        return null;
+        if (id == null) {
+            // 如果id不存在，则赋予根目录id
+            id = 0L;
+        }
+        String username = TokenUtils.getLoggedUserInfo();
+        User user = userService.findByCondition(username, UserQueryCondition.USERNAME);
+        if (user == null) {
+            log.error("[AUTH] logged user is not found <username: {}>", username);
+            return new ResultVO(INTERNAL_SERVER_ERROR, "登陆状态异常");
+        }
+        DirList directories = directoryService.listPublicDirectories(id, user.getId());
+        if (directories == null) {
+            log.error("[DIR] directory not found <dir_id: {}, user_id: {}>", id, user.getId());
+            return new ResultVO(BAD_REQUEST, "目录不存在");
+        }
+        return new ResultVO(directories);
     }
 
     /**
@@ -142,16 +162,6 @@ public class ManuscriptController {
     public ResultVO listPrivateDirectory(@PathVariable(value = "id", required = false) Long id) {
         return null;
     }
-
-    /**
-     * 查询
-     * @param id
-     * @return
-     */
-//    @GetMapping("/root/{id}")
-//    public ResultVO findRootByDocId(@PathVariable("id") Long id) {
-//        Manuscript manuscript = manuscriptService.findById(id);
-//    }
 }
 
 

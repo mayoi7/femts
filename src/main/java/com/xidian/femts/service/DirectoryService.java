@@ -13,11 +13,12 @@ import com.xidian.femts.vo.DirList;
 public interface DirectoryService {
 
     /**
-     * 查询某目录下的目录结构
+     * 查询某目录下的公开（指当前登陆用户可见）目录及文档（只包含当前目录下的直接文档及子目录，不包括子目录的子目录）
      * @param id 目录id（directory表主键），禁止为空
-     * @return {@link DirList}表示的目录数据结构
+     * @param userId 登陆用户id（虽然不限制必须是登陆用户，但是调用方必须传入当前登陆用户的id）
+     * @return 目录数据结构，如果不存在目录则会返回空（区别于空目录）
      */
-    DirList listDirectories(Long id);
+    DirList listPublicDirectories(Long id, Long userId);
 
     /**
      * 根据id查找
@@ -25,11 +26,4 @@ public interface DirectoryService {
      * @return 数据表中对象
      */
     Directory findById(Long id);
-
-    /**
-     * 根据id查找目录名称
-     * @param id 目录id
-     * @return 目录名称，如果为空说明id不存在
-     */
-    String findNameById(Long id);
 }
