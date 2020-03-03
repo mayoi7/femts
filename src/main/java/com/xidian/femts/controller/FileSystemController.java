@@ -16,10 +16,7 @@ import com.xidian.femts.vo.ResultVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -65,10 +62,13 @@ public class FileSystemController {
      *     6. 返回文件数据<br/>
      * </p>
      * @param mulFile Dropzone
+     * @param directoryId 文档保存目录
+     * @param level 文档安全级别（可视级别）
      * @return 文件上传是否成功的通知
      */
-    @PostMapping("upload")
+    @PostMapping("upload/{directoryId}")
     public ResultVO upload(MultipartFile mulFile,
+                           @PathVariable("directoryId") Long directoryId,
                            @RequestParam(value = "level", defaultValue = "PUBLIC") SecurityLevel level) {
         // 1. 获取登陆用户的id
         String username = TokenUtils.getLoggedUserInfo();
@@ -143,7 +143,7 @@ public class FileSystemController {
         }
 
         // 6. 在数据库中保存文档信息
-        Manuscript manuscript = manuscriptService.saveFile(userId, mulFile.getName(), fileType, fileId, hash, level);
+        Manuscript manuscript = manuscriptService.saveFile(userId, directoryId, mulFile.getName(), fileType, fileId, hash, level);
         if (manuscript == null) {
             log.error("[FileSystem] save file to database failed <name: {}>", mulFile.getOriginalFilename());
             return new ResultVO(INTERNAL_SERVER_ERROR, "文件上传数据库失败");

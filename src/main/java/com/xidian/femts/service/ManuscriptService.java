@@ -53,6 +53,7 @@ public interface ManuscriptService {
     /**
      * 将文件保存到数据库中（此过程在将文件上传到fastdfs之后执行）
      * @param userId 用户id（创建人）
+     * @param directoryId 保存的目录id
      * @param fileName 文件名
      * @param fileType 文件格式
      * @param fileId fastdfs中的文件id
@@ -60,7 +61,7 @@ public interface ManuscriptService {
      * @param level 文件权限级别
      * @return 返回插入后数据库的数据
      */
-    Manuscript saveFile(Long userId, String fileName, FileType fileType, String fileId,
+    Manuscript saveFile(Long userId, Long directoryId, String fileName, FileType fileType, String fileId,
                         String hash, SecurityLevel level);
 
     /**

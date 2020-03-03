@@ -2,12 +2,16 @@ package com.xidian.femts.controller;
 
 import com.xidian.femts.constants.UserQueryCondition;
 import com.xidian.femts.constants.UserState;
+import com.xidian.femts.entity.Directory;
 import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.entity.Permission;
 import com.xidian.femts.entity.User;
+import com.xidian.femts.service.DirectoryService;
 import com.xidian.femts.service.ManuscriptService;
 import com.xidian.femts.service.PermissionService;
 import com.xidian.femts.service.UserService;
+import com.xidian.femts.utils.TokenUtils;
+import com.xidian.femts.vo.DirList;
 import com.xidian.femts.vo.ReadWritePermission;
 import com.xidian.femts.vo.ResultVO;
 import lombok.extern.slf4j.Slf4j;
@@ -32,10 +36,13 @@ public class ManuscriptController {
 
     private final UserService userService;
 
-    public ManuscriptController(ManuscriptService manuscriptService, PermissionService permissionService, UserService userService) {
+    private final DirectoryService directoryService;
+
+    public ManuscriptController(ManuscriptService manuscriptService, PermissionService permissionService, UserService userService, DirectoryService directoryService) {
         this.manuscriptService = manuscriptService;
         this.permissionService = permissionService;
         this.userService = userService;
+        this.directoryService = directoryService;
     }
 
 
@@ -123,34 +130,55 @@ public class ManuscriptController {
     }
 
     /**
-     * 获取公共空间某目录下的目录结构
+     * 获取当前登陆用户可视空间某目录下的目录结构
      * @param id 目录id，如果为空则获取最上层目录
      * @return 目录结构
      */
-    @GetMapping("/list/public/{id}")
-    public ResultVO listPublicDirectory(@PathVariable(value = "id", required = false) Long id) {
-        return null;
+    @GetMapping("/directory/list/{id}")
+    public ResultVO listVisibleDirectory(@PathVariable(value = "id", required = false) Long id) {
+        if (id == null) {
+            // 如果id不存在，则赋予根目录id
+            id = 0L;
+        }
+        String username = TokenUtils.getLoggedUserInfo();
+        User user = userService.findByCondition(username, UserQueryCondition.USERNAME);
+        if (user == null) {
+            log.error("[AUTH] logged user is not found <username: {}>", username);
+            return new ResultVO(INTERNAL_SERVER_ERROR, "登陆状态异常");
+        }
+        DirList directories = directoryService.listPublicDirectories(id, user.getId());
+        if (directories == null) {
+            log.error("[DIR] directory not found <dir_id: {}, user_id: {}>", id, user.getId());
+            return new ResultVO(BAD_REQUEST, "目录不存在");
+        }
+        return new ResultVO(directories);
     }
 
     /**
-     * 获取当前登陆用户的私人空间目录结构
-     * @param id 目录id，如果为空则获取最上层目录
-     * @return 目录结构
+     * 在目录下添加新目录
+     * @param id 父目录id
+     * @param name 目录名称
+     * @return 添加成功返回SUCCESS标记
      */
-    @GetMapping("/list/private/{id}")
-    public ResultVO listPrivateDirectory(@PathVariable(value = "id", required = false) Long id) {
-        return null;
+    @PostMapping("/directory/append/{id}")
+    public ResultVO appendDirectory(@PathVariable("id") Long id, @RequestParam("name") String name,
+                                    @RequestParam("visible") boolean visible) {
+        String username = TokenUtils.getLoggedUserInfo();
+        User user = userService.findByCondition(username, UserQueryCondition.USERNAME);
+        if (user == null) {
+            log.error("[USER] logged user not found <username: {}>", username);
+            return new ResultVO(INTERNAL_SERVER_ERROR, "登陆状态异常");
+        }
+        // 返回值用于确认是否保存成功
+        Directory directory = directoryService.createEmptyDirectory(name, id, user.getId(), visible);
+        if (directory == null) {
+            log.error("[DIR] directory create failed <name: {}, parent_id: {}, username: {}>",
+                    name, id, username);
+            return new ResultVO(BAD_REQUEST, "保存失败");
+        } else {
+            return ResultVO.SUCCESS;
+        }
     }
-
-    /**
-     * 查询
-     * @param id
-     * @return
-     */
-//    @GetMapping("/root/{id}")
-//    public ResultVO findRootByDocId(@PathVariable("id") Long id) {
-//        Manuscript manuscript = manuscriptService.findById(id);
-//    }
 }
 
 

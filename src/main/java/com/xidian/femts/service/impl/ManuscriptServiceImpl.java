@@ -16,7 +16,6 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.io.IOException;
 
 import static com.xidian.femts.constants.HashAlgorithm.MD5;
 import static com.xidian.femts.utils.HashUtils.hashBytes;
@@ -78,12 +77,8 @@ public class ManuscriptServiceImpl implements ManuscriptService {
                     return new JudgeResult<>(true, new FileSigner.FileData(bytes, hash));
                 } else {
                     hash = fileSigner.signZipFile(file.getPath(), bytes);
-                    try {
-                        // 返回新字节数组
-                        bytes = MulFileUtils.changeFileToBytes(file);
-                    } catch (IOException e) {
-                        return new JudgeResult<>(false, new FileSigner.FileData(bytes, hash));
-                    }
+                    // 返回新字节数组
+                    bytes = MulFileUtils.changeFileToBytes(file);
                     return new JudgeResult<>(false, new FileSigner.FileData(bytes, hash));
                 }
 
@@ -112,11 +107,12 @@ public class ManuscriptServiceImpl implements ManuscriptService {
 
     @Override
     @CachePut(cacheNames = "doc", key = "#userId")
-    public Manuscript saveFile(Long userId, String fileName, FileType fileType, String fileId,
+    public Manuscript saveFile(Long userId, Long directoryId, String fileName, FileType fileType, String fileId,
                                String hash, SecurityLevel level) {
         // 保存时不知道文件id（数据表主键），缓存又是根据id来查询，所以无法添加缓存
         Manuscript manuscript = Manuscript.builder()
-                .title(fileName).fileId(fileId).type(fileType).level(level)
+                .directoryId(directoryId).title(fileName).fileId(fileId)
+                .type(fileType).level(level)
                 .createdBy(userId).modifiedBy(userId)
                 .build();
         // TODO: 2020/2/10 添加content的保存

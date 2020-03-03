@@ -41,6 +41,9 @@ public class Manuscript implements Serializable {
 	@Column(name = "title")
 	private String title;
 
+	@Column(name = "directory_id")
+	private Long directoryId;
+
    	@Column(name = "content_id")
 	private Long contentId;
 

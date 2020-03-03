@@ -18,6 +18,9 @@ import java.util.List;
 @NoArgsConstructor
 public class DirList {
 
+    /** 当前目录id */
+    private Long id;
+
     /** 目录列表 */
     private List<String> directories;
 

@@ -29,6 +29,7 @@ public class UserServiceImpl implements UserService {
     @Cacheable(cacheNames = "user", key = "#param + '$' + #condition")
     public User findByCondition(String param, UserQueryCondition condition) {
         if (param == null) {
+            log.error("[USER] query param can not be null <query_condition: {}>", condition);
             return null;
         }
 
