@@ -8,8 +8,12 @@
     <link rel="stylesheet" href="../static/css/femts.min.css">
     <link rel="stylesheet" href="../static/css/index.css">
     <style>
+        body {
+            /*overflow-y: hidden;*/
+        }
         .container {
             max-width: 80rem;
+            margin-bottom: 50px;
             padding-top: 30px;
             box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
         }
@@ -34,6 +38,10 @@
         .el-tree>.el-tree-node {
             display: inline-block;
             min-width: 100%;
+        }
+        .el-tree-node__content {
+            margin-bottom: 2px;
+            height: auto;
         }
 
         .container .frame {
@@ -65,7 +73,56 @@
 
         #docFrame div {
             width: 100%;
-            margin: 30px 0;
+            margin: 30px 50px !important;
+        }
+
+        .side-bar .options .option {
+            margin-right: 1px;
+        }
+
+        svg:hover path {
+            fill: #303133;
+        }
+
+        #editor {
+            height: 100%;
+            margin-bottom: 15px;
+            padding: 5px;
+        }
+
+        #editor>div {
+            /*min-height: 370px;*/
+            margin-bottom: 20px;
+        }
+
+        #setting_link {
+            text-decoration: none;
+            color: #606266;
+        }
+
+        #setting_link:hover {
+            color: #303133;
+        }
+
+        #setting_link svg {
+            position: relative;
+            bottom: 1px;
+        }
+
+        li.el-dropdown-menu__item {
+            width: 163px;
+        }
+
+        li.el-dropdown-menu__item svg {
+            display: inline-flex;
+            align-items: center;
+            position: absolute;
+            margin-top: 11px;
+        }
+
+        li.el-dropdown-menu__item .fix-right {
+            display: inline-flex;
+            padding-left: 32px;
         }
     </style>
 </head>
@@ -160,20 +217,90 @@
 
     <div class="container">
         <div class="side-bar">
-            <el-tree :load="loadNodes" lazy :props="props"></el-tree>
+            <el-tree :load="loadNodes" lazy :props="props" :expand-on-click-node="false" @change="refreshTree">
+              <div class="custom-tree-node" style="width: 100%;" slot-scope="{ node, data }">
+                  <div class="name d-inline-block float-left">
+                      <span>{{ node.label }}</span>
+                  </div>
+                  <div class="options d-inline-block float-right">
+                      <div class="d-inline-block option">
+                          <a href="javascript:void(0);" @click="append(node, data)">
+                              <svg t="1583287421081" fill="#909399" class="icon" viewBox="0 0 1028 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2271" width="17" height="17"><path d="M1018.319924 112.117535q4.093748 9.210934 6.652341 21.492179t2.558593 25.585928-5.117186 26.609365-16.374994 25.585928q-12.281245 12.281245-22.003898 21.492179t-16.886712 16.374994q-8.187497 8.187497-15.351557 14.32812l-191.382739-191.382739q12.281245-11.257808 29.167958-27.121083t28.144521-25.074209q14.32812-11.257808 29.679676-15.863275t30.191395-4.093748 28.656239 4.605467 24.050772 9.210934q21.492179 11.257808 47.589826 39.402329t40.425766 58.847634zM221.062416 611.554845q6.140623-6.140623 28.656239-29.167958t56.289041-56.80076l74.710909-74.710909 82.898406-82.898406 220.038979-220.038979 191.382739 192.406177-220.038979 220.038979-81.874969 82.898406q-40.937484 39.914047-73.687472 73.175753t-54.242167 54.753885-25.585928 24.562491q-10.234371 9.210934-23.539054 19.445305t-27.632802 16.374994q-14.32812 7.16406-41.960921 17.398431t-57.824197 19.957024-57.312478 16.886712-40.425766 9.210934q-27.632802 3.070311-36.843736-8.187497t-5.117186-37.867173q2.046874-14.32812 9.722653-41.449203t16.374994-56.289041 16.886712-53.730448 13.304682-33.773425q6.140623-14.32812 13.816401-26.097646t22.003898-26.097646z" p-id="2272"></path></svg>
+                          </a>
+                      </div>
+                      <div class="d-inline-block option">
+                          <a href="javascript:void(0);" @click="append(node, data)">
+                              <svg t="1583220811962" fill="#909399" class="folder" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1181" width="17" height="17"><path d="M576 268.8h313.6c12.8 0 19.2-12.8 19.2-25.6V166.4c0-12.8-6.4-25.6-19.2-25.6H518.4c-19.2 0-25.6 25.6-12.8 38.4l57.6 83.2c0 6.4 6.4 6.4 12.8 6.4z" p-id="1182"></path><path d="M902.4 320H576c-12.8 0-32-6.4-38.4-25.6L409.6 128c-12.8-12.8-25.6-19.2-44.8-19.2H128c-32 0-57.6 32-57.6 64v627.2c0 38.4 25.6 64 57.6 64h774.4c32 0 57.6-32 57.6-64V384c0-38.4-25.6-64-57.6-64z m-268.8 352c0 19.2-12.8 32-32 32H204.8c-19.2 0-32-12.8-32-32s12.8-32 32-32h403.2c12.8 0 25.6 12.8 25.6 32z m166.4 0c0 19.2-12.8 32-32 32h-25.6c-19.2 0-32-12.8-32-32s12.8-32 32-32h25.6c19.2 0 32 12.8 32 32z" p-id="1183"></path></svg>
+                          </a>
+                      </div>
+                      <div class="d-inline-block option">
+                          <a href="javascript:void(0);" @click="append(node, data)">
+                              <svg t="1583287854716" fill="#909399" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3738" width="17" height="17"><path d="M629.76 849.92v151.04l220.16-184.32H665.6c-17.92 0-35.84 15.36-35.84 33.28z m184.32-742.4H125.44c-17.92 0-33.28 20.48-33.28 38.4v824.32c0 17.92 12.8 30.72 30.72 30.72h473.6v-184.32c0-17.92 17.92-35.84 33.28-35.84h220.16v-640c0-15.36-17.92-35.84-35.84-33.28z m-563.2 624.64c-23.04 0-40.96-17.92-40.96-40.96 0-23.04 17.92-40.96 40.96-40.96s40.96 17.92 40.96 40.96c0 20.48-17.92 40.96-40.96 40.96z m0-186.88c-23.04 0-40.96-17.92-40.96-40.96 0-23.04 17.92-40.96 40.96-40.96s40.96 17.92 40.96 40.96c0 23.04-17.92 40.96-40.96 40.96z m0-184.32c-23.04 0-40.96-17.92-40.96-40.96 0-23.04 17.92-40.96 40.96-40.96s40.96 17.92 40.96 40.96c0 20.48-17.92 40.96-40.96 40.96z m445.44 335.36c0 10.24-7.68 17.92-17.92 17.92H376.32c-10.24 0-17.92-7.68-17.92-17.92v-17.92c0-10.24 7.68-17.92 17.92-17.92h302.08c10.24 0 17.92 7.68 17.92 17.92v17.92z m0-184.32c0 10.24-7.68 17.92-17.92 17.92H376.32c-10.24 0-17.92-7.68-17.92-17.92v-17.92c0-10.24 7.68-17.92 17.92-17.92h302.08c10.24 0 17.92 7.68 17.92 17.92v17.92z m0-184.32c0 10.24-7.68 17.92-17.92 17.92H376.32c-10.24 0-17.92-7.68-17.92-17.92v-17.92c0-10.24 7.68-17.92 17.92-17.92h302.08c10.24 0 17.92 7.68 17.92 17.92v17.92zM903.68 23.04H202.24c-25.6 0-43.52 25.6-43.52 51.2h691.2c17.92 0 33.28 17.92 33.28 33.28v624.64c25.6 0 51.2-15.36 51.2-40.96V53.76c-2.56-17.92-15.36-30.72-30.72-30.72z" p-id="3739"></path></svg>
+                          </a>
+                      </div>
+                  </div>
+              </div>
+            </el-tree>
         </div>
         <div class="frame" >
             <div class="title">{{doc.title}}</div>
             <div class="info" style="margin: 2px 10px 10px 15px;">
                 <div class="author d-inline-block">{{doc.author}}</div>
                 <div class="function d-inline-block" style="margin-left: 20px; font-size: 15px; float:right">
-                    <a href="javascript:void(0);" @click="edit">编辑</a>
-                    <div class="d-inline-block"></div>
-                    <a href="javascript:void(0);" @click="download">下载</a>
+                    <el-button type="text">编辑</el-button>
+                    <el-button type="text">下载</el-button>
                 </div>
             </div>
             <hr>
-            <div class="content" style="color: #000" id="docFrame" v-html="doc.content"></div>
+            <div class="content" style="color: #000">
+                <div v-if="doc.content == null || doc.content === ''" style="text-align: center;margin-top: 100px;margin-bottom: 45px;">
+                    <el-upload
+                            class="upload-demo"
+                            drag
+                            action="#">
+                        <i class="el-icon-upload"></i>
+                        <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+                        <div class="el-upload__tip" slot="tip">只能上传txt/doc/docx/rtf/pdf/ofd文件，且不超过5mb</div>
+                    </el-upload>
+                </div>
+                <div id="editor" v-else-if="show_editor">
+                    <textarea id="editor_id" name="content" style="width:100%;height:100%;">
+                        {{doc.content}}
+                    </textarea>
+                    <div class="setting d-inline-block float-right">
+                        <el-dropdown trigger="click" @command="selectSecurityLevel">
+                            <span class="el-dropdown-link">
+                                <a id="setting_link" href="javascript:void(0);">
+                                    <div class="svg-icon">
+                                        <svg t="1583316392762" class="icon" fill="#606266" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2951" width="20" height="20"><path d="M925.312 449.728l-71.424-11.2a55.68 55.68 0 0 1-27.072-12.224 50.496 50.496 0 0 1-16.832-21.44 184.128 184.128 0 0 1-8.704-41.344 83.648 83.648 0 0 1 4.608-41.344l42.88-58.176a47.488 47.488 0 0 0 6.656-17.856 39.296 39.296 0 0 0-1.536-18.88 48.64 48.64 0 0 0-9.152-16.32l-31.616-31.616a38.848 38.848 0 0 0-26.048-11.2 39.808 39.808 0 0 0-27.008 7.168l-58.176 42.88a52.608 52.608 0 0 1-27.584 11.2 44.992 44.992 0 0 1-27.584-4.096 145.92 145.92 0 0 1-21.952-12.8 192.896 192.896 0 0 1-25.472-20.928c-8.512-8.128-13.12-15.296-13.76-21.376l-11.264-71.488a38.848 38.848 0 0 0-13.76-24.448 38.848 38.848 0 0 0-26.048-10.24H489.6a37.888 37.888 0 0 0-17.92 4.608 44.096 44.096 0 0 0-14.784 12.8 34.816 34.816 0 0 0-7.104 17.28l-11.264 71.488a47.616 47.616 0 0 1-6.144 18.368c-3.392 6.144-7.68 11.584-12.8 16.32s-9.984 7.808-14.72 9.152c-11.584 4.096-25.344 7.04-41.344 8.704-16 1.728-29.824 0.192-41.344-4.608l-58.176-42.88a40.32 40.32 0 0 0-27.008-7.168 39.04 39.04 0 0 0-26.048 11.264l-31.616 31.616a48.96 48.96 0 0 0-9.216 16.32 39.296 39.296 0 0 0-1.536 18.88c1.024 6.464 3.2 12.416 6.656 17.856l42.88 58.176a58.88 58.88 0 0 1 11.264 28.032 43.52 43.52 0 0 1-4.096 27.008c-2.752 6.144-7.04 13.504-12.8 22.016-5.824 8.512-12.8 16.96-20.928 25.472-8.192 8.512-15.296 13.056-21.44 13.76l-71.424 11.264a34.112 34.112 0 0 0-13.248 4.608 39.68 39.68 0 0 0-10.752 9.152 55.936 55.936 0 0 0-7.616 12.224 32.896 32.896 0 0 0-3.072 13.824v44.864c0 9.536 3.392 18.24 10.24 26.048a39.04 39.04 0 0 0 24.512 13.76l71.424 11.2a48.896 48.896 0 0 1 18.368 6.208c6.144 3.392 11.584 7.68 16.32 12.8a37.12 37.12 0 0 1 9.152 14.72l2.048 7.168a58.752 58.752 0 0 1 3.072 10.688l2.048 11.712a132.864 132.864 0 0 1 2.048 24.448v11.2a30.656 30.656 0 0 1-5.12 17.344l-42.88 58.176a40.32 40.32 0 0 0-7.168 27.008 39.04 39.04 0 0 0 11.264 26.048l31.616 31.616a38.848 38.848 0 0 0 26.048 11.2 39.936 39.936 0 0 0 27.008-7.168l58.176-42.88a57.6 57.6 0 0 1 37.76-11.712 37.952 37.952 0 0 1 17.344 4.608c10.88 4.8 23.488 13.12 37.76 25.024 14.272 11.904 22.08 21.952 23.488 30.08l11.264 71.424a35.136 35.136 0 0 0 7.168 17.344 44.8 44.8 0 0 0 14.784 12.8c5.76 3.2 11.712 4.736 17.856 4.736h44.928c2.688 0 5.76-0.512 9.152-1.536a58.048 58.048 0 0 0 9.152-3.584 35.328 35.328 0 0 0 7.616-5.12 44.8 44.8 0 0 0 6.656-7.168 57.408 57.408 0 0 0 5.12-8.192 20.288 20.288 0 0 0 2.048-9.152l11.2-71.424a55.168 55.168 0 0 1 12.224-27.008 50.496 50.496 0 0 1 21.44-16.832c11.584-4.096 25.536-6.976 41.856-8.704 16.32-1.728 29.952-0.192 40.832 4.608l58.176 42.88a37.888 37.888 0 0 0 13.248 5.632c4.736 1.024 9.536 1.344 14.272 1.024a45.312 45.312 0 0 0 13.76-3.072 32.768 32.768 0 0 0 11.712-7.616l31.616-31.616a39.232 39.232 0 0 0 11.264-26.048 40.256 40.256 0 0 0-7.168-27.008l-42.88-58.176a52.608 52.608 0 0 1-11.2-27.584 44.992 44.992 0 0 1 4.096-27.584 188.8 188.8 0 0 1 33.728-47.424c8.192-8.512 15.296-13.056 21.44-13.76l71.424-11.264a39.168 39.168 0 0 0 24.512-13.76 39.104 39.104 0 0 0 10.176-26.048V489.6a37.504 37.504 0 0 0-4.608-17.856 43.52 43.52 0 0 0-12.8-14.784 35.584 35.584 0 0 0-17.28-7.232z m-413.248 239.808a171.072 171.072 0 0 1-125.504-52.032C351.872 602.816 334.528 560.96 334.528 512s17.344-90.816 52.032-125.504a171.072 171.072 0 0 1 125.504-52.032c48.96 0 90.816 17.344 125.504 52.032 34.752 34.688 52.096 76.544 52.096 125.504s-17.344 90.816-52.032 125.504a171.328 171.328 0 0 1-125.568 52.032z" p-id="2952"></path></svg>
+                                        设置<i class="el-icon-arrow-down el-icon--right"></i>
+                                    </div>
+                                </a>
+                            </span>
+                            <el-dropdown-menu slot="dropdown">
+                                <el-dropdown-item command="0">
+                                    <svg v-if="setting_select == 0" viewBox="0 0 12 9" class="Icon Button-icon Icon--check" width="14" height="16" aria-hidden="true" style="height: 16px; width: 14px;"><title></title><g><path d="M10.896 1.802L4.5 8.182c-.198.197-.467.293-.746.293h-.002c-.28 0-.55-.097-.747-.296L.307 5.472c-.41-.413-.41-1.077.004-1.488.414-.41 1.082-.407 1.494.006l1.952 1.966L9.403.31c.412-.413 1.08-.413 1.492 0 .413.41.413 1.08 0 1.492z"></path></g></svg>
+                                    <div class="fix-right">仅自己可见</div>
+                                </el-dropdown-item>
+                                <el-dropdown-item command="1">
+                                    <svg v-if="setting_select == 1" viewBox="0 0 12 9" class="Icon Button-icon Icon--check" width="14" height="16" aria-hidden="true" style="height: 16px; width: 14px;"><title></title><g><path d="M10.896 1.802L4.5 8.182c-.198.197-.467.293-.746.293h-.002c-.28 0-.55-.097-.747-.296L.307 5.472c-.41-.413-.41-1.077.004-1.488.414-.41 1.082-.407 1.494.006l1.952 1.966L9.403.31c.412-.413 1.08-.413 1.492 0 .413.41.413 1.08 0 1.492z"></path></g></svg>
+                                    <div class="fix-right">公开不可编辑</div>
+                                </el-dropdown-item>
+                                <el-dropdown-item command="2">
+                                    <svg v-if="setting_select == 2" viewBox="0 0 12 9" class="Icon Button-icon Icon--check" width="14" height="16" aria-hidden="true" style="height: 16px; width: 14px;"><title></title><g><path d="M10.896 1.802L4.5 8.182c-.198.197-.467.293-.746.293h-.002c-.28 0-.55-.097-.747-.296L.307 5.472c-.41-.413-.41-1.077.004-1.488.414-.41 1.082-.407 1.494.006l1.952 1.966L9.403.31c.412-.413 1.08-.413 1.492 0 .413.41.413 1.08 0 1.492z"></path></g></svg>
+                                    <div class="fix-right">仅上级可见</div>
+                                </el-dropdown-item>
+                                <el-dropdown-item command="3">
+                                    <svg v-if="setting_select == 3" viewBox="0 0 12 9" class="Icon Button-icon Icon--check" width="14" height="16" aria-hidden="true" style="height: 16px; width: 14px;"><title></title><g><path d="M10.896 1.802L4.5 8.182c-.198.197-.467.293-.746.293h-.002c-.28 0-.55-.097-.747-.296L.307 5.472c-.41-.413-.41-1.077.004-1.488.414-.41 1.082-.407 1.494.006l1.952 1.966L9.403.31c.412-.413 1.08-.413 1.492 0 .413.41.413 1.08 0 1.492z"></path></g></svg>
+                                    <div class="fix-right">公开</div>
+                                </el-dropdown-item>
+                            </el-dropdown-menu>
+                        </el-dropdown>
+                        <el-button type="primary" plain>保存文档</el-button>
+                    </div>
+                </div>
+                <div v-else  id="docFrame" v-html="doc.content"></div>
+            </div>
         </div>
         <div style="clear: both"></div>
     </div>
@@ -184,6 +311,7 @@
 <script src="../static/vendor/vue/vue.min.js"></script>
 <script src="../static/vendor/jquery/jquery.min.js"></script>
 <script src="../static/vendor/element-ui/lib/index.js"></script>
+<script src="../static/vendor/axios/axios.js"></script>
 <script src="../static/js/femts.min.js"></script>
 <script>
     KindEditor.options.filterMode = false;
@@ -191,17 +319,21 @@
         window.editor = K.create('#editor_id');
     });
 
-    new Vue({
+    let $app = new Vue({
         el: '#app',
         data () {
             return {
                 show_alert: false,
                 show_setting: false,
+                show_editor: true,
+                setting_select: 1,
                 props: {
                     label: 'name',
-                    children: 'zones',
+                    children: 'children',
                     isLeaf: 'leaf'
                 },
+                node: [],
+                resolve: [],
                 doc: {
                     title: "就撒打击啥的案件哦我既然asdasda 啥的",
                     author: "刘昊楠123",
@@ -217,28 +349,87 @@
                 this.$data.show_setting = false;
             },
             loadNodes(node, resolve) {
+                console.log(node);
                 if (node.level === 0) {
-                    return resolve([{ name: '金融企业文稿追溯系统' }]);
+                    this.$data.node = node;
+                    this.resolve = resolve;
+                    let treeData;
+                    axios.get("https://www.fastmock.site/mock/b643231b81d6851b3bf8fe14314271d4/femts/directory/list/" + node.id)
+                        .then(res => {
+                            if (res.data.code === 200) {
+                                return resolve(res.data.data);
+                            } else {
+                                this.$message.error(res.data.data);
+                            }
+                        }).catch(err => {
+                            this.$message.error(err);
+                        });
+                } else {
+                    return resolve([
+                        {
+                            id: 12,
+                            name: 'hhh',
+                            children: []
+                        }
+                    ]);
                 }
-                // if (node.level > 1) return resolve([]);
-
-                // 模拟网络获取
-                setTimeout(() => {
-                    const data = [{
-                        name: '金融企业文稿追溯系统节点1',
-                        leaf: true
-                    }, {
-                        name: 'user username password 统标题2'
-                    }];
-
-                    resolve(data);
-                }, 500);
+            },
+            refreshTree(value) {
+              this.node.childrenNodes = [];
+              this.loadNodes(this.node, this.resolve)
+            },
+            append(node, data) {
+                this.$prompt('请输入文件夹名称', '创建文件夹', {
+                    confirmButtonText: '创建',
+                    cancelButtonText: '取消',
+                    inputPattern: /^[\u0391-\uFFE5A-Za-z]+$/,
+                    inputErrorMessage: '名称中不能包含非中文或英文的字符'
+                }).then(({ value }) => {
+                    // 这里是向后台提交的数据，非vue绑定的数据
+                    const postData = {
+                        id: node.id,
+                        name: value,
+                        children: [],
+                        visible: false
+                    };
+                    axios.post("https://www.fastmock.site/mock/b643231b81d6851b3bf8fe14314271d4/femts/doc/directory/append/" + node.id, postData)
+                        .then(res => {
+                            if (res.data.code === 200) {
+                                // 如果返回200，则返回的数据为新目录的id
+                                let id = res.data.data;
+                                const newChild = {
+                                    'id': id,
+                                    'name': value,
+                                    'leaf': false
+                                };
+                                data.children.push(newChild);
+                                this.$message({
+                                    type: 'success',
+                                    message: '创建成功'
+                                });
+                            } else {
+                                this.$message.error(res.data.data);
+                            }
+                        }).catch(err => {
+                            // 生产环境中需要改为‘异常错误信息’
+                            this.$message.error(err);
+                        })
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '取消输入'
+                    });
+                });
             },
             edit() {
 
             },
             download() {
 
+            },
+            selectSecurityLevel(command) {
+                console.log(command)
+                this.$data.setting_select = command
             }
         }
     });
