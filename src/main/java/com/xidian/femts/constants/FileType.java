@@ -20,7 +20,7 @@ public enum FileType implements CodeEnum {
     PDF("pdf", 3),
     OFD("ofd", 4),
     RTF("rtf", 5),
-    OTHER("unknown", 6);
+    CUSTOM("", 6);
 
     private String name;
 
@@ -38,6 +38,6 @@ public enum FileType implements CodeEnum {
                 return type;
             }
         }
-        return OTHER;
+        return CUSTOM;
     }
 }

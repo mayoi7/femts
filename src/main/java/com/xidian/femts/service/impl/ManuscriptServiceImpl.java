@@ -4,16 +4,20 @@ import com.xidian.femts.constants.FileType;
 import com.xidian.femts.constants.SecurityLevel;
 import com.xidian.femts.core.FileSigner;
 import com.xidian.femts.dto.JudgeResult;
+import com.xidian.femts.entity.Content;
 import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.entity.Mark;
+import com.xidian.femts.repository.ContentRepository;
 import com.xidian.femts.repository.ManuscriptRepository;
 import com.xidian.femts.repository.MarkRepository;
+import com.xidian.femts.service.InternalCacheService;
 import com.xidian.femts.service.ManuscriptService;
 import com.xidian.femts.utils.MulFileUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 
@@ -31,23 +35,20 @@ public class ManuscriptServiceImpl implements ManuscriptService {
 
     private final ManuscriptRepository manuscriptRepository;
 
+    private final ContentRepository contentRepository;
+
     private final MarkRepository markRepository;
+
+    private final InternalCacheService cacheService;
 
     private final FileSigner fileSigner;
     
-    public ManuscriptServiceImpl(ManuscriptRepository manuscriptRepository, FileSigner fileSigner, MarkRepository markRepository) {
+    public ManuscriptServiceImpl(ManuscriptRepository manuscriptRepository, FileSigner fileSigner, MarkRepository markRepository, ContentRepository contentRepository, InternalCacheService cacheService) {
         this.manuscriptRepository = manuscriptRepository;
         this.fileSigner = fileSigner;
         this.markRepository = markRepository;
-    }
-
-    @Override
-    @Cacheable(cacheNames = "doc", key = "#id")
-    public Manuscript findById(Long id) {
-        return manuscriptRepository.findById(id).orElseGet(() -> {
-            log.warn("[DOC] found manuscript is null <id: {}>", id);
-            return null;
-        });
+        this.contentRepository = contentRepository;
+        this.cacheService = cacheService;
     }
 
     @Override
@@ -95,7 +96,7 @@ public class ManuscriptServiceImpl implements ManuscriptService {
 
             // 不进行处理的格式文件
             case TXT:
-            case OTHER:
+            case CUSTOM:
             default:
                 // 其他情况根据mark表的数据来判断
                 hash = hashBytes(MD5, bytes);
@@ -106,20 +107,41 @@ public class ManuscriptServiceImpl implements ManuscriptService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     @CachePut(cacheNames = "doc", key = "#userId")
-    public Manuscript saveFile(Long userId, Long directoryId, String fileName, FileType fileType, String fileId,
+    public Manuscript saveFile(Long userId, Long directoryId, Long contentId, String fileName, FileType fileType, String fileId,
                                String hash, SecurityLevel level) {
         // 保存时不知道文件id（数据表主键），缓存又是根据id来查询，所以无法添加缓存
         Manuscript manuscript = Manuscript.builder()
-                .directoryId(directoryId).title(fileName).fileId(fileId)
-                .type(fileType).level(level)
+                .directoryId(directoryId).contentId(contentId).fileId(fileId)
+                .title(fileName).type(fileType).level(level)
                 .createdBy(userId).modifiedBy(userId)
                 .build();
-        // TODO: 2020/2/10 添加content的保存
+
         Manuscript record = manuscriptRepository.save(manuscript);
-        Mark mark = new Mark(record.getId(), fileType, hash);
-        markRepository.save(mark);
+        if (hash != null) {
+            // 如果文件hash为空，说明文件未上传至文件系统，不需要存储文件标记
+            Mark mark = new Mark(record.getId(), fileType, hash);
+            markRepository.save(mark);
+        }
         return manuscript;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long saveContent(String content) {
+        Content record = new Content();
+        record.setContent(content);
+        Content saved = contentRepository.save(record);
+        return saved.getId();
+    }
+
+    @Override
+    @CachePut(cacheNames = "content", key = "#contentId")
+    public Long updateContent(Long contentId, String content) {
+        Content record = new Content(contentId, content);
+        // 返回值必不为空
+        return contentRepository.save(record).getId();
     }
 
     @Cacheable(cacheNames = "mark", key = "#hash")

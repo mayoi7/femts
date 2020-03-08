@@ -18,7 +18,7 @@ public class JsonTest {
     public void object2Json() {
         History history = new History();
         history.setUserId(1L);
-        history.setOptionId(1L);
+        history.setObjectId(1L);
         history.setOptionType(OptionType.UPDATE);
         history.setId(2L);
         history.setTime(new Date());

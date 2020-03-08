@@ -4,6 +4,7 @@ import com.xidian.femts.entity.History;
 import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.entity.User;
 import com.xidian.femts.service.HistoryService;
+import com.xidian.femts.service.InternalCacheService;
 import com.xidian.femts.service.ManuscriptService;
 import com.xidian.femts.service.UserService;
 import com.xidian.femts.vo.HistoryRecord;
@@ -31,16 +32,19 @@ import static com.xidian.femts.constants.UserQueryCondition.ID;
 @Slf4j
 public class HistoryController {
 
+    private final InternalCacheService cacheService;
+
     private final HistoryService historyService;
 
     private final UserService userService;
 
     private final ManuscriptService manuscriptService;
 
-    public HistoryController(HistoryService historyService, UserService userService, ManuscriptService manuscriptService) {
+    public HistoryController(HistoryService historyService, UserService userService, ManuscriptService manuscriptService, InternalCacheService cacheService) {
         this.historyService = historyService;
         this.userService = userService;
         this.manuscriptService = manuscriptService;
+        this.cacheService = cacheService;
     }
 
     /**
@@ -64,10 +68,10 @@ public class HistoryController {
         String username = user.getUsername();
         // 格式化输出结果
         histories.forEach(history -> {
-            Manuscript manuscript = manuscriptService.findById(history.getOptionId());
+            Manuscript manuscript = cacheService.findById_Manuscript(history.getObjectId());
             if (manuscript == null) {
                 log.error("[HISTORY] doc id in history table is not existed <doc_id: {}>",
-                        history.getOptionId());
+                        history.getObjectId());
             } else {
                 records.add(new HistoryRecord(history, username, manuscript.getTitle()));
             }
@@ -83,12 +87,12 @@ public class HistoryController {
      */
     @GetMapping("/doc/{docId}")
     public ResultVO findDocHistoryById(@PathVariable("docId") Long docId) {
-        Manuscript manuscript = manuscriptService.findById(docId);
+        Manuscript manuscript = cacheService.findById_Manuscript(docId);
         if (manuscript == null) {
             log.warn("[HISTORY] doc id is not existed <doc_id: {}>", docId);
             return new ResultVO(HttpStatus.BAD_REQUEST, "文档id不存在");
         }
-        List<History> histories = historyService.queryDocHistoriesByOptionId(docId);
+        List<History> histories = historyService.queryDocHistoriesByObjectId(docId);
         List<HistoryRecord> records = new ArrayList<>(histories.size());
         if (histories.isEmpty()) {
             return new ResultVO(records);

@@ -33,7 +33,7 @@ public class HistoryRecord {
         }
         this.userId = history.getUserId();
         this.username = username;
-        this.docId = history.getOptionId();
+        this.docId = history.getObjectId();
         this.title = title;
         this.time = history.getTime();
         this.option = history.getOptionType().getName();

@@ -3,7 +3,7 @@ package com.xidian.femts.controller;
 import com.alibaba.fastjson.JSON;
 import com.xidian.femts.constants.UserQueryCondition;
 import com.xidian.femts.entity.User;
-import com.xidian.femts.service.EmailService;
+import com.xidian.femts.service.impl.EmailService;
 import com.xidian.femts.service.LoginService;
 import com.xidian.femts.service.UserService;
 import com.xidian.femts.utils.TokenUtils;
