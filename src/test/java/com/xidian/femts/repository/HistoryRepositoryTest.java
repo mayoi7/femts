@@ -32,7 +32,7 @@ public class HistoryRepositoryTest {
     @Rollback(value = true)
     public void saveRecord() {
         History history = new History();
-        history.setOptionId(1L);
+        history.setObjectId(1L);
         history.setOptionType(OptionType.UPDATE);
         history.setUserId(2L);
         History saved = historyRepository.save(history);

@@ -19,13 +19,6 @@ import java.io.File;
 public interface ManuscriptService {
 
     /**
-     * 根据文稿id查找数据库中对象
-     * @param id 文稿id（不可为空）
-     * @return 数据库中文稿对象，为空说明id不正确
-     */
-    Manuscript findById(Long id);
-
-    /**
      * 根据文档标题和作者信息进行查询
      * @param userId 作者id
      * @param title 文档标题（禁止为空）（<b>禁止为纯数字</b>）
@@ -51,9 +44,10 @@ public interface ManuscriptService {
     JudgeResult<FileSigner.FileData> checkIfFileUploadedOrSetHash(File file, byte[] bytes, FileType type);
 
     /**
-     * 将文件保存到数据库中（此过程在将文件上传到fastdfs之后执行）
+     * 在数据库中创建文件（禁止更新）
      * @param userId 用户id（创建人）
      * @param directoryId 保存的目录id
+     * @param contentId 文档内容id
      * @param fileName 文件名
      * @param fileType 文件格式
      * @param fileId fastdfs中的文件id
@@ -61,8 +55,23 @@ public interface ManuscriptService {
      * @param level 文件权限级别
      * @return 返回插入后数据库的数据
      */
-    Manuscript saveFile(Long userId, Long directoryId, String fileName, FileType fileType, String fileId,
+    Manuscript saveFile(Long userId, Long directoryId, Long contentId, String fileName, FileType fileType, String fileId,
                         String hash, SecurityLevel level);
+
+    /**
+     * 保存文档内容
+     * @param content 文档html内容
+     * @return 文档内容id
+     */
+    Long saveContent(String content);
+
+    /**
+     * 更新文档内容
+     * @param contentId 文档内容id
+     * @param content 更新后的文档内容
+     * @return 更新后的文档内容id
+     */
+    Long updateContent(Long contentId, String content);
 
     /**
      * 根据文件hash查找数据库中存在的文档id

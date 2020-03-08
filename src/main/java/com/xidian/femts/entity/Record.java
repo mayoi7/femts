@@ -38,12 +38,6 @@ public class Record implements Serializable {
 	private Long id;
 
 	/**
-	 * 浏览次数
-	 */
-   	@Column(name = "browse" )
-	private Integer browse;
-
-	/**
 	 * 下载次数
 	 */
    	@Column(name = "download" )
@@ -54,7 +48,6 @@ public class Record implements Serializable {
 	public String toString() {
 		return "{" +
 					"id='" + id + '\'' +
-					"browse='" + browse + '\'' +
 					"download='" + download + '\'' +
 				'}';
 	}

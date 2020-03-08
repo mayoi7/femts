@@ -1,6 +1,6 @@
 package com.xidian.femts.utils;
 
-import com.xidian.femts.service.EmailService;
+import com.xidian.femts.service.impl.EmailService;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;

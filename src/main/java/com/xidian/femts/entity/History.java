@@ -2,6 +2,7 @@ package com.xidian.femts.entity;
 
 import com.xidian.femts.constants.OptionType;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.DynamicInsert;
@@ -21,6 +22,7 @@ import java.util.Date;
 @Entity
 @Table ( name ="record" , schema = "")
 @Data
+@Builder
 @DynamicInsert
 @DynamicUpdate
 @AllArgsConstructor
@@ -52,8 +54,8 @@ public class History implements Serializable {
 	/**
 	 * 操作对象id（即文档id）
 	 */
-   	@Column(name = "option_id" )
-	private Long optionId;
+   	@Column(name = "object_id" )
+	private Long objectId;
 
 	@Override
 	public String toString() {
@@ -62,7 +64,7 @@ public class History implements Serializable {
 					"userId='" + userId + '\'' +
 					"time='" + time + '\'' +
 					"optionType='" + optionType + '\'' +
-					"optionId='" + optionId + '\'' +
+					"optionId='" + objectId + '\'' +
 				'}';
 	}
 

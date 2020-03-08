@@ -4,7 +4,7 @@ import com.xidian.femts.constants.RedisKeys;
 import com.xidian.femts.constants.UserQueryCondition;
 import com.xidian.femts.entity.User;
 import com.xidian.femts.exception.ParamException;
-import com.xidian.femts.service.EmailService;
+import com.xidian.femts.service.impl.EmailService;
 import com.xidian.femts.service.RedisService;
 import com.xidian.femts.service.UserService;
 import com.xidian.femts.utils.TokenUtils;

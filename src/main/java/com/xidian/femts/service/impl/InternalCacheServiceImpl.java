@@ -1,6 +1,9 @@
 package com.xidian.femts.service.impl;
 
+import com.xidian.femts.entity.Manuscript;
+import com.xidian.femts.repository.ContentRepository;
 import com.xidian.femts.repository.DirectoryRepository;
+import com.xidian.femts.repository.ManuscriptRepository;
 import com.xidian.femts.service.InternalCacheService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -17,18 +20,39 @@ public class InternalCacheServiceImpl implements InternalCacheService {
 
     private final DirectoryRepository directoryRepository;
 
-    public InternalCacheServiceImpl(DirectoryRepository directoryRepository) {
+    private final ManuscriptRepository manuscriptRepository;
+
+    private final ContentRepository contentRepository;
+
+    public InternalCacheServiceImpl(DirectoryRepository directoryRepository, ManuscriptRepository manuscriptRepository, ContentRepository contentRepository) {
         this.directoryRepository = directoryRepository;
+        this.manuscriptRepository = manuscriptRepository;
+        this.contentRepository = contentRepository;
     }
 
     @Override
     @Cacheable(cacheNames = "directoryName", key = "#id")
-    public String findNameById(Long id) {
+    public String findNameById_Directory(Long id) {
         return directoryRepository.findNameById(id);
     }
 
     @Cacheable(cacheNames = "directoryNameVisible", key = "#id + '$' + #userId")
-    public String findNameByIdIfVisible(Long id, Long userId) {
+    public String findNameByIdIfVisible_Directory(Long id, Long userId) {
         return directoryRepository.findNameByIdIfVisible(id, userId);
+    }
+
+    @Override
+    @Cacheable(cacheNames = "doc", key = "#id")
+    public Manuscript findById_Manuscript(Long id) {
+        return manuscriptRepository.findById(id).orElseGet(() -> {
+            log.warn("[DOC] found manuscript is null <id: {}>", id);
+            return null;
+        });
+    }
+
+    @Override
+    @Cacheable(cacheNames = "content", key = "#contentId")
+    public String findById_Content(Long contentId) {
+        return contentRepository.findTitleById(contentId);
     }
 }

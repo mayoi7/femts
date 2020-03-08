@@ -2,6 +2,7 @@ package com.xidian.femts.repository;
 
 import com.xidian.femts.entity.Content;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -11,4 +12,7 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface ContentRepository extends JpaRepository<Content, Long> {
+
+    @Query(value = "select content from content where id = :id", nativeQuery = true)
+    String findTitleById(Long id);
 }

@@ -8,6 +8,7 @@ import com.xidian.femts.dto.JudgeResult;
 import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.entity.Mark;
 import com.xidian.femts.entity.User;
+import com.xidian.femts.service.InternalCacheService;
 import com.xidian.femts.service.ManuscriptService;
 import com.xidian.femts.service.StorageService;
 import com.xidian.femts.service.UserService;
@@ -41,14 +42,17 @@ public class FileSystemController {
 
     private final StorageService storageService;
 
+    private final InternalCacheService cacheService;
+
     private final ManuscriptService manuscriptService;
 
     private final UserService userService;
 
-    public FileSystemController(StorageService storageService, ManuscriptService manuscriptService, UserService userService) {
+    public FileSystemController(StorageService storageService, ManuscriptService manuscriptService, UserService userService, InternalCacheService cacheService) {
         this.storageService = storageService;
         this.manuscriptService = manuscriptService;
         this.userService = userService;
+        this.cacheService = cacheService;
     }
 
     /**
@@ -111,7 +115,7 @@ public class FileSystemController {
                 file = saveFile2Local(mulFile);break;
             case PDF:
             case TXT:
-            case OTHER:
+            case CUSTOM:
             default:
                 file = changeMulFileToFile(mulFile);break;
         }
@@ -130,7 +134,7 @@ public class FileSystemController {
                         mulFile.getOriginalFilename());
                 return new ResultVO(BAD_REQUEST, "文件中的标识符在数据库中不存在，请检查文件是否正确");
             }
-            return new ResultVO(manuscriptService.findById(mark.getManuscriptId()));
+            return new ResultVO(cacheService.findById_Manuscript(mark.getManuscriptId()));
         }
         String hash = fileData.hash;
         bytes = fileData.bytes;
@@ -141,13 +145,14 @@ public class FileSystemController {
             log.error("[FileSystem] file upload failed <name: {}>", mulFile.getOriginalFilename());
             return new ResultVO(INTERNAL_SERVER_ERROR, "服务器文件上传失败，请稍后重试");
         }
-
+        // TODO: 2020/3/5 添加文档内容信息的保存
         // 6. 在数据库中保存文档信息
-        Manuscript manuscript = manuscriptService.saveFile(userId, directoryId, mulFile.getName(), fileType, fileId, hash, level);
+        Manuscript manuscript = manuscriptService.saveFile(userId, directoryId, null, mulFile.getName(), fileType, fileId, hash, level);
         if (manuscript == null) {
             log.error("[FileSystem] save file to database failed <name: {}>", mulFile.getOriginalFilename());
             return new ResultVO(INTERNAL_SERVER_ERROR, "文件上传数据库失败");
         }
+        // TODO: 2020/3/5 添加操作记录
         return new ResultVO(CREATED, manuscript);
     }
 

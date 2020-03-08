@@ -1,11 +1,13 @@
 package com.xidian.femts.service.impl;
 
+import com.xidian.femts.constants.OptionType;
 import com.xidian.femts.entity.History;
 import com.xidian.femts.repository.HistoryRepository;
 import com.xidian.femts.service.HistoryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,14 +40,23 @@ public class HistoryServiceImpl implements HistoryService {
     }
 
     @Override
-    @Cacheable(cacheNames = "doc_history", key = "#optionId")
-    public List<History> queryDocHistoriesByOptionId(Long optionId) {
-        List<History> histories = historyRepository.findHistoriesByOptionId(optionId);
+    @Cacheable(cacheNames = "doc_history", key = "#objectId")
+    public List<History> queryDocHistoriesByObjectId(Long objectId) {
+        List<History> histories = historyRepository.findHistoriesByOptionId(objectId);
         if (histories == null) {
-            log.info("[HISTORY] doc history records is null <doc_id: {}>", optionId);
+            log.info("[HISTORY] doc history records is null <doc_id: {}>", objectId);
             return new ArrayList<>(1);
         } else {
             return histories;
         }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void addOptionHistory(Long userId, Long objectId, OptionType option) {
+        History history = History.builder()
+                .userId(userId).objectId(objectId).optionType(option)
+                .build();
+        historyRepository.save(history);
     }
 }

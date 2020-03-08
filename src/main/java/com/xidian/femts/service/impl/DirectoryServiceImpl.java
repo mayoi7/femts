@@ -71,7 +71,7 @@ public class DirectoryServiceImpl implements DirectoryService {
         List<String> manuscripts = new ArrayList<>(dirIds.size());
 
         dirIds.forEach(ele -> {
-            String name = cacheService.findNameByIdIfVisible(Long.parseLong(ele), userId);
+            String name = cacheService.findNameByIdIfVisible_Directory(Long.parseLong(ele), userId);
             if (name != null) {
                 directories.add(name);
             }

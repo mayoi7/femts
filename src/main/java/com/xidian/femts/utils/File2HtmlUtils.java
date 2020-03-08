@@ -57,7 +57,7 @@ public class File2HtmlUtils {
             case RTF:
                 // 后续添加这两种文件的支持
                 return null;
-            case OTHER:
+            case CUSTOM:
             default:
                 // 暂时不支持其他文件格式
                 return null;
