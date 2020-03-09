@@ -1,6 +1,7 @@
 package com.xidian.femts.controller;
 
 import com.xidian.femts.constants.FileType;
+import com.xidian.femts.constants.OptionType;
 import com.xidian.femts.constants.SecurityLevel;
 import com.xidian.femts.constants.UserQueryCondition;
 import com.xidian.femts.core.FileSigner;
@@ -8,10 +9,8 @@ import com.xidian.femts.dto.JudgeResult;
 import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.entity.Mark;
 import com.xidian.femts.entity.User;
-import com.xidian.femts.service.InternalCacheService;
-import com.xidian.femts.service.ManuscriptService;
-import com.xidian.femts.service.StorageService;
-import com.xidian.femts.service.UserService;
+import com.xidian.femts.service.*;
+import com.xidian.femts.utils.File2HtmlUtils;
 import com.xidian.femts.utils.TokenUtils;
 import com.xidian.femts.vo.ResultVO;
 import lombok.extern.slf4j.Slf4j;
@@ -42,17 +41,20 @@ public class FileSystemController {
 
     private final StorageService storageService;
 
+    private final HistoryService historyService;
+
     private final InternalCacheService cacheService;
 
     private final ManuscriptService manuscriptService;
 
     private final UserService userService;
 
-    public FileSystemController(StorageService storageService, ManuscriptService manuscriptService, UserService userService, InternalCacheService cacheService) {
+    public FileSystemController(StorageService storageService, ManuscriptService manuscriptService, UserService userService, InternalCacheService cacheService, HistoryService historyService) {
         this.storageService = storageService;
         this.manuscriptService = manuscriptService;
         this.userService = userService;
         this.cacheService = cacheService;
+        this.historyService = historyService;
     }
 
     /**
@@ -145,14 +147,16 @@ public class FileSystemController {
             log.error("[FileSystem] file upload failed <name: {}>", mulFile.getOriginalFilename());
             return new ResultVO(INTERNAL_SERVER_ERROR, "服务器文件上传失败，请稍后重试");
         }
-        // TODO: 2020/3/5 添加文档内容信息的保存
         // 6. 在数据库中保存文档信息
-        Manuscript manuscript = manuscriptService.saveFile(userId, directoryId, null, mulFile.getName(), fileType, fileId, hash, level);
+        String htmlContent = File2HtmlUtils.convertFileBytesToHTML(bytes, fileType);
+        Long contentId = manuscriptService.saveContent(htmlContent);
+        Manuscript manuscript = manuscriptService.saveFile(userId, directoryId, contentId, mulFile.getName(), fileType, fileId, hash, level);
         if (manuscript == null) {
             log.error("[FileSystem] save file to database failed <name: {}>", mulFile.getOriginalFilename());
             return new ResultVO(INTERNAL_SERVER_ERROR, "文件上传数据库失败");
         }
-        // TODO: 2020/3/5 添加操作记录
+        // 7. 添加操作记录
+        historyService.addOptionHistory(userId, manuscript.getId(), OptionType.CREATE);
         return new ResultVO(CREATED, manuscript);
     }
 
