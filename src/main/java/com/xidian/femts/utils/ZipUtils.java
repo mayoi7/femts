@@ -36,7 +36,7 @@ public class ZipUtils {
 //            parameters.setCompressionLevel(Zip4jConstants.DEFLATE_LEVEL_NORMAL);
             // 目标路径
 //            parameters.setRootFolderInZip("/");
-            zipFile.addFolder(toAdd, parameters);
+            zipFile.addFile(toAdd, parameters);
         } catch (ZipException e) {
             log.error("");
             e.printStackTrace();

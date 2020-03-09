@@ -18,8 +18,8 @@ class File2HtmlUtilsTest {
 //        System.out.println(Arrays.toString(bytes));
 //        File file1 = MulFileUtils.changeBytesToFile(bytes);
 //        file1.createNewFile();
-        String content = File2HtmlUtils.convertWord2007ToHTML(file);
-        System.out.println(content);
+//        String content = File2HtmlUtils(file);
+//        System.out.println(content);
 //        InputStream inputStream = new ByteArrayInputStream(bytes);
 //        String content = Word2HtmlUtils.convertWord2007ToHTML(bytes);
 //        String content = File2HtmlUtils.convertWord2003ToHTML(file);
@@ -30,8 +30,8 @@ class File2HtmlUtilsTest {
     void testConvertPdfToHTML() throws Exception {
         File file = new File("file/temp/001.pdf");
         byte[] bytes = MulFileUtils.changeFileToBytes(file);
-        String content = File2HtmlUtils.convertPdfToHTML(bytes);
-        System.out.println(content);
+//        String content = File2HtmlUtils.convertPdfToHTML(bytes);
+//        System.out.println(content);
     }
 
 }
