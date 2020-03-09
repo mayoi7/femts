@@ -41,7 +41,7 @@ public class File2HtmlUtils {
      * @param fileType 文件类型
      * @return 返回html标签/div标签；如果返回null则说明转换出现异常
      */
-    public String convertFileBytesToHTML(byte[] bytes, FileType fileType) {
+    public static String convertFileBytesToHTML(byte[] bytes, FileType fileType) {
         switch (fileType) {
             case WORD2007:
                 File docx = MulFileUtils.changeBytesToFile(bytes, true);
@@ -52,12 +52,12 @@ public class File2HtmlUtils {
             case PDF:
                 return convertPdfToHTML(bytes);
             case TXT:
+            case CUSTOM:
                 return convertTxtToHTML(bytes);
             case OFD:
             case RTF:
                 // 后续添加这两种文件的支持
                 return null;
-            case CUSTOM:
             default:
                 // 暂时不支持其他文件格式
                 return null;
