@@ -59,6 +59,14 @@ public interface ManuscriptService {
                         String hash, SecurityLevel level);
 
     /**
+     * 修改编辑用户
+     * @param docId 文档id
+     * @param editorId 编辑人id
+     * @return 返回编辑后的文档内容，如果为null，说明发生异常（文档id不存在）
+     */
+    Manuscript updateEditor(Long docId, Long editorId);
+
+    /**
      * 保存文档内容
      * @param content 文档html内容
      * @return 文档内容id

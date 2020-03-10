@@ -26,6 +26,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable(cacheNames = "user_id", key = "#username")
+    public Long findIdByUsername(String username) {
+        return userRepository.findIdByUsername(username);
+    }
+
+    @Override
+    @Cacheable(cacheNames = "username", key = "#userId")
+    public String findUsernameById(Long userId) {
+        return userRepository.findUsernameById(userId);
+    }
+
+    @Override
     @Cacheable(cacheNames = "user", key = "#param + '$' + #condition")
     public User findByCondition(String param, UserQueryCondition condition) {
         if (param == null) {
@@ -81,7 +93,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    @CachePut(cacheNames = "user", key = "#user.username")
+    @CachePut(cacheNames = "user", key = "#user.username + '$USERNAME'")
     public User saveUser(User user) {
         if (user == null) {
             log.warn("[USER] reject save null data");
@@ -95,7 +107,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    @CachePut(cacheNames = "user", key = "#user.username")
+    @CachePut(cacheNames = "user", key = "#user.username + '$USERNAME'")
     public User updateUser(Long userId, User user) {
         // jpa的save会自动触发查询userId是否存在，所以不要做额外的检查操作
         if (user == null || user.getId() == null) {

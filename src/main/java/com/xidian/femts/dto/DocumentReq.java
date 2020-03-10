@@ -11,7 +11,7 @@ import lombok.Data;
  * @email acerola.orion@foxmail.com
  */
 @Data
-public class DocumentData {
+public class DocumentReq {
     /** 文档标题 */
     private String title;
 
@@ -24,9 +24,9 @@ public class DocumentData {
     /** 文档可见级别 */
     private SecurityLevel level;
 
-    /** 创建者id */
-    private Long creatorId;
+    /** 创建者用户名 */
+    private String creator;
 
-    /** 编辑者id */
-    private Long editorId;
+    /** 编辑者用户名 */
+    private String editor;
 }
