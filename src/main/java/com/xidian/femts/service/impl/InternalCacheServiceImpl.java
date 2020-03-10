@@ -52,7 +52,7 @@ public class InternalCacheServiceImpl implements InternalCacheService {
 
     @Override
     @Cacheable(cacheNames = "content", key = "#contentId")
-    public String findById_Content(Long contentId) {
-        return contentRepository.findTitleById(contentId);
+    public String findContentById_Content(Long contentId) {
+        return contentRepository.findContentById(contentId);
     }
 }

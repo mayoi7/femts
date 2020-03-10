@@ -43,18 +43,21 @@ public class FileSystemController {
 
     private final HistoryService historyService;
 
+    private final DirectoryService directoryService;
+
     private final InternalCacheService cacheService;
 
     private final ManuscriptService manuscriptService;
 
     private final UserService userService;
 
-    public FileSystemController(StorageService storageService, ManuscriptService manuscriptService, UserService userService, InternalCacheService cacheService, HistoryService historyService) {
+    public FileSystemController(StorageService storageService, ManuscriptService manuscriptService, UserService userService, InternalCacheService cacheService, HistoryService historyService, DirectoryService directoryService) {
         this.storageService = storageService;
         this.manuscriptService = manuscriptService;
         this.userService = userService;
         this.cacheService = cacheService;
         this.historyService = historyService;
+        this.directoryService = directoryService;
     }
 
     /**
@@ -155,7 +158,13 @@ public class FileSystemController {
             log.error("[FileSystem] save file to database failed <name: {}>", mulFile.getOriginalFilename());
             return new ResultVO(INTERNAL_SERVER_ERROR, "文件上传数据库失败");
         }
-        // 7. 添加操作记录
+        // 7. 在目录表中记录信息
+        if (directoryService.appendManuscript(directoryId, manuscript.getId()) == null) {
+            // 只打印log，如果影响较大可以后期加上重试操作，但不要中止整个流程
+            log.error("[DIR] directory append failed <parent_id: {}, doc_id: {}>",
+                    directoryId, manuscript.getId());
+        }
+        // 8. 添加操作记录
         historyService.addOptionHistory(userId, manuscript.getId(), OptionType.CREATE);
         return new ResultVO(CREATED, manuscript);
     }

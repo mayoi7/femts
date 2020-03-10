@@ -2,6 +2,7 @@ package com.xidian.femts.repository;
 
 import com.xidian.femts.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -11,6 +12,12 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
+
+    @Query(value = "select id from user where username = :username and state != 0", nativeQuery = true)
+    Long findIdByUsername(String username);
+
+    @Query(value = "select username from user where id = :userId", nativeQuery = true)
+    String findUsernameById(Long userId);
 
     User findByUsername(String username);
 

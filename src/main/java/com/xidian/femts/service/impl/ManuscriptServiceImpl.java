@@ -128,6 +128,17 @@ public class ManuscriptServiceImpl implements ManuscriptService {
     }
 
     @Override
+    public Manuscript updateEditor(Long docId, Long editorId) {
+        Manuscript manuscript = cacheService.findById_Manuscript(docId);
+        if (manuscript == null) {
+            log.error("[DOCUMENT] doc id is not found <doc_id: {}>", docId);
+            return null;
+        }
+        manuscript.setModifiedBy(docId);
+        return manuscriptRepository.save(manuscript);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public Long saveContent(String content) {
         Content record = new Content();

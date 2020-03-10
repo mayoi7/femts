@@ -14,5 +14,5 @@ import org.springframework.stereotype.Repository;
 public interface ContentRepository extends JpaRepository<Content, Long> {
 
     @Query(value = "select content from content where id = :id", nativeQuery = true)
-    String findTitleById(Long id);
+    String findContentById(Long id);
 }

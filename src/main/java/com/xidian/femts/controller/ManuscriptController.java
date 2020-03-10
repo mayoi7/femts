@@ -1,22 +1,27 @@
 package com.xidian.femts.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.xidian.femts.constants.FileType;
 import com.xidian.femts.constants.OptionType;
 import com.xidian.femts.constants.UserQueryCondition;
 import com.xidian.femts.constants.UserState;
-import com.xidian.femts.dto.DocumentData;
+import com.xidian.femts.dto.DocumentReq;
+import com.xidian.femts.dto.DocumentResp;
 import com.xidian.femts.entity.Directory;
 import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.entity.Permission;
 import com.xidian.femts.entity.User;
 import com.xidian.femts.service.*;
 import com.xidian.femts.utils.TokenUtils;
-import com.xidian.femts.vo.DirList;
+import com.xidian.femts.vo.DirectoryElement;
 import com.xidian.femts.vo.ReadWritePermission;
 import com.xidian.femts.vo.ResultVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+import static com.xidian.femts.constants.UserQueryCondition.ID;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
@@ -60,17 +65,17 @@ public class ManuscriptController {
      * @return 返回code为200时，data为对应数据对象；返回code为400时，data为错误信息
      */
     @GetMapping("/{id}")
-    public ResultVO returnDocById(@PathVariable("id") Long id,
-                                  @RequestParam(defaultValue = "false") boolean contentRequired) {
+    public ResultVO returnDocById(@PathVariable("id") Long id) {
         Manuscript manuscript = cacheService.findById_Manuscript(id);
         if (manuscript == null) {
+            log.error("[DOC] doc id is not found <doc_id: {}>", id);
             return new ResultVO(BAD_REQUEST, "id不存在");
         }
-        if (contentRequired) {
-            // 如果需要具体的内容部分
-            // TODO: 2020/3/5 添加内容的查找
-        }
-        return new ResultVO(manuscript);
+        String content = cacheService.findContentById_Content(manuscript.getContentId());
+        String creator = userService.findUsernameById(manuscript.getCreatedBy());
+        String editor = userService.findUsernameById(manuscript.getModifiedBy());
+
+        return new ResultVO(new DocumentResp(manuscript, content, creator, editor));
     }
 
     /**
@@ -82,7 +87,7 @@ public class ManuscriptController {
      */
     @PostMapping("/{id}")
     public ResultVO createOrUpdateManuscript(@PathVariable(value = "id", required = false) Long id,
-                                             @RequestBody DocumentData document) {
+                                             @RequestBody DocumentReq document) {
         Manuscript manuscript;
         if (id == null) {
             manuscript = createFile(document);
@@ -95,7 +100,14 @@ public class ManuscriptController {
                 manuscript = updateFile(id, document);
             }
         }
-        return new ResultVO(manuscript);
+        if (manuscript == null) {
+            log.error("[DOCUMENT] create/update file failed <document: {}>", JSON.toJSONString(document));
+            return new ResultVO(BAD_REQUEST, "数据异常");
+        } else {
+            DocumentResp resp = new DocumentResp(manuscript, document.getContent(),
+                    document.getCreator(), document.getEditor());
+            return new ResultVO(resp);
+        }
     }
 
     /**
@@ -104,11 +116,19 @@ public class ManuscriptController {
      * @param document 文档数据
      * @return 返回存储后的文档数据，携带有id信息；如果返回空说明插入失败
      */
-    private Manuscript createFile(DocumentData document) {
+    private Manuscript createFile(DocumentReq document) {
         Long contentId = manuscriptService.saveContent(document.getContent());
-        Manuscript manuscript = manuscriptService.saveFile(document.getCreatorId(), document.getDirectoryId(),
+        Long creatorId = userService.findIdByUsername(document.getCreator());
+        Manuscript manuscript = manuscriptService.saveFile(creatorId, document.getDirectoryId(),
                 contentId, document.getTitle(), FileType.CUSTOM, null, null, document.getLevel());
-        historyService.addOptionHistory(document.getCreatorId(), manuscript.getId(), OptionType.CREATE);
+        // 在目录表中记录
+        Directory directory = directoryService.appendManuscript(document.getDirectoryId(), manuscript.getId());
+        if (directory == null) {
+            log.error("[DIR] directory append failed <parent_id: {}, doc_id: {}>",
+                    document.getDirectoryId(), manuscript.getId());
+            return null;
+        }
+        historyService.addOptionHistory(creatorId, manuscript.getId(), OptionType.CREATE);
         return manuscript;
     }
 
@@ -119,7 +139,7 @@ public class ManuscriptController {
      * @param document 文档数据
      * @return 返回更新后的文档数据，如果返回空说明更新失败
      */
-    private Manuscript updateFile(Long id, DocumentData document) {
+    private Manuscript updateFile(Long id, DocumentReq document) {
         // 1. 更新数据库中content表
         Manuscript manuscript = cacheService.findById_Manuscript(id);
         if (id == null) {
@@ -136,18 +156,22 @@ public class ManuscriptController {
             // 而不应当掩饰这一错误，而应即使将错误抛出，避免导致更严重的错误
             return null;
         }
-        // 2. 生成新文件（txt类型，类型在数据库中标记为枚举中的CUSTOM类型）
+        // 2. 修改文档编辑人
+        Long editorId = userService.findIdByUsername(document.getEditor());
+        manuscript = manuscriptService.updateEditor(manuscript.getId(), editorId);
+
+        // 3. 生成新文件（txt类型，类型在数据库中标记为枚举中的CUSTOM类型）
         //    实际是将String类型转换为字节数据，模拟生成文件
         byte[] bytes = document.getContent().getBytes();
-        // 3. 更新文件系统中真实文件，如果文件未上传过就上传，否则就更新
+        // 4. 更新文件系统中真实文件，如果文件未上传过就上传，否则就更新
         if (manuscript.getFileId() == null) {
             // 自定义文件类型扩展名为空（可能会导致fastdfs错误，待测试）
             storageService.upload(bytes, FileType.CUSTOM.getName());
         } else {
             storageService.modify(manuscript.getFileId(), bytes, FileType.CUSTOM.getName());
         }
-        // 4. 添加操作记录
-        historyService.addOptionHistory(document.getEditorId(), manuscript.getId(), OptionType.UPDATE);
+        // 5. 添加操作记录
+        historyService.addOptionHistory(editorId, manuscript.getId(), OptionType.UPDATE);
         return manuscript;
     }
 
@@ -174,7 +198,7 @@ public class ManuscriptController {
             return new ResultVO(BAD_REQUEST, "文档id不存在");
         }
         Long creatorId = manuscript.getCreatedBy();
-        User user = userService.findByCondition(viewerId.toString(), UserQueryCondition.ID);
+        User user = userService.findByCondition(viewerId.toString(), ID);
         if (user == null) {
             return new ResultVO(BAD_REQUEST, "用户id不存在");
         }
@@ -233,7 +257,7 @@ public class ManuscriptController {
             log.error("[AUTH] logged user is not found <username: {}>", username);
             return new ResultVO(INTERNAL_SERVER_ERROR, "登陆状态异常");
         }
-        DirList directories = directoryService.listPublicDirectories(id, user.getId());
+        List<DirectoryElement> directories = directoryService.listPublicDirectories(id, user.getId());
         if (directories == null) {
             log.error("[DIR] directory not found <dir_id: {}, user_id: {}>", id, user.getId());
             return new ResultVO(BAD_REQUEST, "目录不存在");
@@ -257,7 +281,7 @@ public class ManuscriptController {
             return new ResultVO(INTERNAL_SERVER_ERROR, "登陆状态异常");
         }
         // 返回值用于确认是否保存成功
-        Directory directory = directoryService.createEmptyDirectory(name, id, user.getId(), visible);
+        Directory directory = directoryService.createAndAppendDirectory(id, name, user.getId(), visible);
         if (directory == null) {
             log.error("[DIR] directory create failed <name: {}, parent_id: {}, username: {}>",
                     name, id, username);

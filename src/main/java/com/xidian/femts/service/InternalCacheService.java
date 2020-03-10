@@ -39,5 +39,5 @@ public interface InternalCacheService {
      * @param contentId 文档内容id（非文档id）
      * @return 返回文档内容，如果为空说明不存在
      */
-    String findById_Content(Long contentId);
+    String findContentById_Content(Long contentId);
 }

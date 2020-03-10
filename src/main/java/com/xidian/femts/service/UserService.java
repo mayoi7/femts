@@ -12,6 +12,20 @@ import com.xidian.femts.entity.User;
 public interface UserService {
 
     /**
+     * 根据用户名查询用户id
+     * @param username 用户名
+     * @return 用户id，如果不存在则返回null
+     */
+    Long findIdByUsername(String username);
+
+    /**
+     * 根据用户id查询用户名
+     * @param userId 用户id
+     * @return 用户的用户名，如果不存在则返回null
+     */
+    String findUsernameById(Long userId);
+
+    /**
      * 根据单个条件查询用户对象</br>
      * 因为查询不到数据时往往是调用方参数错误，所以在方法内不打印日志，由调用方自行打印
      * @param param 查询参数（不能为空）
