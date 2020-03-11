@@ -64,6 +64,13 @@ public class User implements Serializable {
 	@Builder.Default
 	private UserState state = UserState.INACTIVATED;
 
+	/**
+	 * 权限级别（0...N：级别依次递增（权限级别等同于公司内部管理级别））
+	 */
+	@Column(name = "level" )
+	@Builder.Default
+	private Integer level = 0;
+
    	@Column(name = "created_at" )
 	private Date createdAt;
 

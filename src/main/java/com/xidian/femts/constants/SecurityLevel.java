@@ -20,14 +20,45 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum SecurityLevel implements CodeEnum {
 
+    /** 只有创建者本人可以读写 */
     PRIVATE("仅自己可见", 0),
-    /** 该级别下对所有人可见，且仅自己可以编辑 */
+    /** 所有人可读，但仅自己可写*/
     UNEDITABLE("不可编辑", 1),
-    /** 该级别对自己也是可见的 */
+    /** 仅上级和自己可以读写 */
     CONFIDENTIAL("仅上级可见", 2),
+    /** 任何人均可读写 */
     PUBLIC("所有人可见", 3);
 
     private String name;
 
     private int code;
+
+    /**
+     * 判断当前安全级别下，文档是否可被<b>其他人（不包含自己）</b>读取
+     * @param readerLevel 读取者权限级别
+     * @param creatorLevel 文档创建者权限级别
+     * @return true：可以；false：不可以
+     */
+    public boolean canRead(int readerLevel, int creatorLevel) {
+        if (readerLevel > creatorLevel) {
+            // 浏览人权限更高
+            return this != PRIVATE;
+        } else {
+            return this != PRIVATE && this != CONFIDENTIAL;
+        }
+    }
+
+    /**
+     * 判断当前安全级别下，文档是否可被<b>其他人（不包含自己）</b>编辑
+     * @param writerLevel 编辑者权限级别
+     * @param creatorLevel 文档创建者
+     * @return true：可编辑；false：
+     */
+    public boolean canWrite(int writerLevel, int creatorLevel) {
+        if (writerLevel > creatorLevel) {
+            return this != PRIVATE && this != UNEDITABLE;
+        } else {
+            return this == PUBLIC;
+        }
+    }
 }
