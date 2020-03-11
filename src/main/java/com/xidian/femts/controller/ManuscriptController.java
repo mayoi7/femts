@@ -9,7 +9,6 @@ import com.xidian.femts.dto.DocumentReq;
 import com.xidian.femts.dto.DocumentResp;
 import com.xidian.femts.entity.Directory;
 import com.xidian.femts.entity.Manuscript;
-import com.xidian.femts.entity.Permission;
 import com.xidian.femts.entity.User;
 import com.xidian.femts.service.*;
 import com.xidian.femts.utils.TokenUtils;
@@ -41,17 +40,14 @@ public class ManuscriptController {
 
     private final ManuscriptService manuscriptService;
 
-    private final PermissionService permissionService;
-
     private final UserService userService;
 
     private final DirectoryService directoryService;
 
     private final HistoryService historyService;
 
-    public ManuscriptController(ManuscriptService manuscriptService, PermissionService permissionService, UserService userService, DirectoryService directoryService, HistoryService historyService, InternalCacheService cacheService, StorageService storageService) {
+    public ManuscriptController(ManuscriptService manuscriptService, UserService userService, DirectoryService directoryService, HistoryService historyService, InternalCacheService cacheService, StorageService storageService) {
         this.manuscriptService = manuscriptService;
-        this.permissionService = permissionService;
         this.userService = userService;
         this.directoryService = directoryService;
         this.historyService = historyService;
@@ -210,22 +206,13 @@ public class ManuscriptController {
             return new ResultVO(new ReadWritePermission(true, true));
         }
 
-        Permission viewerLevel = permissionService.findById(viewerId);
-        if (viewerLevel == null) {
-            return new ResultVO(BAD_REQUEST, "文档查询者没有对应的权限级别");
-        }
-        Permission creatorLevel = permissionService.findById(creatorId);
-        if (creatorLevel == null) {
-            return new ResultVO(BAD_REQUEST, "文档创建者没有对应的权限级别");
-        }
-
         switch (manuscript.getLevel()) {
             case PRIVATE:
                 return new ResultVO(new ReadWritePermission(false, false));
             case UNEDITABLE:
                 return new ResultVO(new ReadWritePermission(true, false));
             case CONFIDENTIAL:
-                if (viewerLevel.getLevel() < creatorLevel.getLevel()) {
+                if (user.getLevel() > user.getLevel()) {
                     // 查询者权限级别更高（同级也不可以）
                     return new ResultVO(new ReadWritePermission(true, true));
                 } else {
