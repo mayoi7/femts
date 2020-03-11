@@ -1,10 +1,13 @@
 package com.xidian.femts.service.impl;
 
 import com.xidian.femts.entity.Directory;
+import com.xidian.femts.entity.Manuscript;
+import com.xidian.femts.entity.User;
 import com.xidian.femts.repository.DirectoryRepository;
 import com.xidian.femts.service.DirectoryService;
 import com.xidian.femts.service.InternalCacheService;
 import com.xidian.femts.service.ManuscriptService;
+import com.xidian.femts.service.UserService;
 import com.xidian.femts.vo.DirectoryElement;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -16,6 +19,7 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.xidian.femts.constants.UserQueryCondition.ID;
 import static com.xidian.femts.utils.ListUtils.string2List;
 
 /**
@@ -29,14 +33,17 @@ public class DirectoryServiceImpl implements DirectoryService {
 
     private final DirectoryRepository directoryRepository;
 
+    private final UserService userService;
+
     private final ManuscriptService manuscriptService;
 
     private final InternalCacheService cacheService;
 
-    public DirectoryServiceImpl(DirectoryRepository directoryRepository, ManuscriptService manuscriptService, InternalCacheService cacheService) {
+    public DirectoryServiceImpl(DirectoryRepository directoryRepository, ManuscriptService manuscriptService, InternalCacheService cacheService, UserService userService) {
         this.directoryRepository = directoryRepository;
         this.manuscriptService = manuscriptService;
         this.cacheService = cacheService;
+        this.userService = userService;
     }
 
     @Override
@@ -57,16 +64,16 @@ public class DirectoryServiceImpl implements DirectoryService {
     /**
      * 获取某目录下的直接文档及子目录
      * @param directory 文档数据
+     * @param readerId 浏览人用户id（必须有效）
      * @return 目录结构
      */
-    private List<DirectoryElement> listSubDirectories(Directory directory, Long userId) {
+    private List<DirectoryElement> listSubDirectories(Directory directory, Long readerId) {
+        // 下属目录和文档列表
         String subs = directory.getSubs();
-        // 下属文档列表
         String docs = directory.getDocs();
 
-        // 目录id列表
+        // 目录和文档id列表
         List<String> dirIds = string2List(subs);
-        // 文档id列表
         List<String> docIds = string2List(docs);
 
         List<DirectoryElement> directories = new ArrayList<>(docIds.size());
@@ -74,7 +81,7 @@ public class DirectoryServiceImpl implements DirectoryService {
 
         dirIds.forEach(id -> {
             Long dirId = Long.parseLong(id);
-            String name = cacheService.findNameByIdIfVisible_Directory(dirId, userId);
+            String name = cacheService.findNameByIdIfVisible_Directory(dirId, readerId);
             if (name != null) {
                 // leaf为false说明非叶节点，为目录结构
                 directories.add(new DirectoryElement(dirId, name, false));
@@ -82,10 +89,44 @@ public class DirectoryServiceImpl implements DirectoryService {
         });
         docIds.forEach(id -> {
             Long docId = Long.parseLong(id);
-            manuscripts.add(new DirectoryElement(docId, manuscriptService.findTitleById(docId), true));
+            Manuscript manuscript = cacheService.findById_Manuscript(docId);
+            if (checkManuscriptVisibility(manuscript, readerId)) {
+                // 判断为有权浏览时再添加文档
+                manuscripts.add(new DirectoryElement(docId, manuscript.getTitle(), true));
+            }
         });
         directories.addAll(manuscripts);
         return directories;
+    }
+
+    /**
+     * 检测文档是否可以被用户浏览
+     * @param manuscript 文档数据
+     * @param readerId 读取人id
+     * @return true：读取人有权浏览；false：文档对读取人不可见
+     */
+    private boolean checkManuscriptVisibility(Manuscript manuscript, Long readerId) {
+        if (manuscript.getCreatedBy().equals(readerId)) {
+            // 读取人即为文档创建者时，无条件授权
+            return true;
+        } else {
+            switch (manuscript.getLevel()) {
+                case PUBLIC:
+                case UNEDITABLE:
+                    // 公开和不可编辑两种状态是对所有人可见的
+                    return true;
+                case CONFIDENTIAL:
+                    // 上级可见需要查询用户权限级别
+                    User creator = userService.findByCondition(manuscript.getCreatedBy().toString(), ID);
+                    User reader = userService.findByCondition(readerId.toString(), ID);
+                    // 读取人权限较大时，则有权浏览
+                    return reader.getLevel() > creator.getLevel();
+                case PRIVATE:
+                default:
+                    // 当读取人不为文档创建者时，私有文档对其他人不可见
+                    return false;
+            }
+        }
     }
 
     @Override
