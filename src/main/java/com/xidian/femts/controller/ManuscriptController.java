@@ -244,7 +244,7 @@ public class ManuscriptController {
             log.error("[AUTH] logged user is not found <username: {}>", username);
             return new ResultVO(INTERNAL_SERVER_ERROR, "登陆状态异常");
         }
-        List<DirectoryElement> directories = directoryService.listPublicDirectories(id, user.getId());
+        List<DirectoryElement> directories = directoryService.listVisibleDirectories(id, user.getId());
         if (directories == null) {
             log.error("[DIR] directory not found <dir_id: {}, user_id: {}>", id, user.getId());
             return new ResultVO(BAD_REQUEST, "目录不存在");
