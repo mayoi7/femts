@@ -1,5 +1,6 @@
 package com.xidian.femts.service;
 
+import com.xidian.femts.entity.Directory;
 import com.xidian.femts.entity.Manuscript;
 
 /**
@@ -11,6 +12,13 @@ import com.xidian.femts.entity.Manuscript;
  * @email acerola.orion@foxmail.com
  */
 public interface InternalCacheService {
+
+    /**
+     * 根据id查找
+     * @param id 主键
+     * @return 数据表中对象
+     */
+    Directory findById(Long id);
 
     /**
      * 根据id查找目录名称<br/>

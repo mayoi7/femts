@@ -10,7 +10,7 @@ import com.xidian.femts.service.ManuscriptService;
 import com.xidian.femts.service.UserService;
 import com.xidian.femts.vo.DirectoryElement;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,7 +47,7 @@ public class DirectoryServiceImpl implements DirectoryService {
     }
 
     @Override
-    public List<DirectoryElement> listPublicDirectories(Long id, Long userId) {
+    public List<DirectoryElement> listVisibleDirectories(Long id, Long userId) {
         Directory directory = directoryRepository.getById(id);
         if (directory == null) {
             log.warn("[DIR] no directory with such id <id: {}>", id);
@@ -129,15 +129,6 @@ public class DirectoryServiceImpl implements DirectoryService {
         }
     }
 
-    @Override
-    @Cacheable(cacheNames = "directory", key = "#id")
-    public Directory findById(Long id) {
-        return directoryRepository.findById(id).orElseGet(() -> {
-            log.warn("[DIR] no directory with such id <id: {}>", id);
-            return null;
-        });
-    }
-
     /**
      * 创建空目录
      * @param parentId 父目录id
@@ -161,9 +152,10 @@ public class DirectoryServiceImpl implements DirectoryService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "directory", key = "#parentId")
     @Transactional(rollbackFor = Exception.class)
     public Directory createAndAppendDirectory(Long parentId, String name, Long userId, boolean visible) {
-        Directory parent = directoryRepository.findById(parentId).orElse(null);
+        Directory parent = cacheService.findById(parentId);
         if (parent == null) {
             log.error("[DIR] parent directory is not found <parent_id: {}>", parentId);
             return null;

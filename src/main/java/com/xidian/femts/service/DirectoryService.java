@@ -20,19 +20,13 @@ public interface DirectoryService {
      * @param userId 登陆用户id（虽然不限制必须是登陆用户，但是调用方必须传入当前登陆用户的id）
      * @return 目录数据结构，如果不存在目录则会返回空（非null）
      */
-    List<DirectoryElement> listPublicDirectories(Long id, Long userId);
+    List<DirectoryElement> listVisibleDirectories(Long id, Long userId);
 
     /**
-     * 根据id查找
-     * @param id 主键
-     * @return 数据表中对象
-     */
-    Directory findById(Long id);
-
-    /**
-     * 添加空目录
+     * 添加空目录，不追加到父目录表中
+     * @deprecated 正常添加目录请使用 {@link DirectoryService#createAndAppendDirectory}
      * @param name 目录名
-     * @param parentId 父目录id
+     * @param parentId 父目录id，不检查id合法性
      * @param userId 创建人id
      * @param visible 是否公开，true：是
      * @return 创建后的目录
@@ -41,7 +35,7 @@ public interface DirectoryService {
 
     /**
      * 添加空目录并追加到父目录表中
-     * @param parentId 父目录id
+     * @param parentId 父目录id，当id不存在会返回null
      * @param name 目录名
      * @param userId 创建人id
      * @param visible 是否公开，true：是

@@ -1,5 +1,6 @@
 package com.xidian.femts.service.impl;
 
+import com.xidian.femts.entity.Directory;
 import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.repository.ContentRepository;
 import com.xidian.femts.repository.DirectoryRepository;
@@ -28,6 +29,15 @@ public class InternalCacheServiceImpl implements InternalCacheService {
         this.directoryRepository = directoryRepository;
         this.manuscriptRepository = manuscriptRepository;
         this.contentRepository = contentRepository;
+    }
+
+    @Override
+    @Cacheable(cacheNames = "directory", key = "#id")
+    public Directory findById(Long id) {
+        return directoryRepository.findById(id).orElseGet(() -> {
+            log.warn("[DIR] no directory with such id <id: {}>", id);
+            return null;
+        });
     }
 
     @Override

@@ -16,7 +16,7 @@ import java.io.File;
  */
 @SpringBootTest
 @RunWith(SpringJUnit4ClassRunner.class)
-class ManuscriptServiceTest {
+public class ManuscriptServiceTest {
 
     @Autowired
     private ManuscriptService manuscriptService;
