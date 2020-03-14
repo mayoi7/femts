@@ -24,6 +24,11 @@
         <poi.version>3.13</poi.version>
         <poi.docreport.version>1.0.6</poi.docreport.version>
         <fastdfs.version>1.29-SNAPSHOT</fastdfs.version>
+        <guava.version>28.1-jre</guava.version>
+        <zip4j.version>2.1.4</zip4j.version>
+        <commons-io.version>2.6</commons-io.version>
+        <pdf2dom.version>1.7</pdf2dom.version>
+        <pdfbox.version>2.0.12</pdfbox.version>
     </properties>
 
     <dependencies>
@@ -202,38 +207,38 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>28.1-jre</version>
+            <version>${guava.version}</version>
         </dependency>
 
         <!-- zip -->
         <dependency>
             <groupId>net.lingala.zip4j</groupId>
             <artifactId>zip4j</artifactId>
-            <version>2.1.4</version>
+            <version>${zip4j.version}</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.6</version>
+            <version>${commons-io.version}</version>
         </dependency>
 
         <!-- pdf converter -->
         <dependency>
             <groupId>net.sf.cssbox</groupId>
             <artifactId>pdf2dom</artifactId>
-            <version>1.7</version>
+            <version>${pdf2dom.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
-            <version>2.0.12</version>
+            <version>${pdfbox.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox-tools</artifactId>
-            <version>2.0.12</version>
+            <version>${pdfbox.version}</version>
         </dependency>
     </dependencies>
 
