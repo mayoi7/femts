@@ -50,4 +50,11 @@ public interface DirectoryService {
      * @return 目录数据
      */
     Directory appendManuscript(Long parentId, Long docId);
+
+    /**
+     * 删除文档（在目录表中删除，不删除文档表中记录）
+     * @param id 待删除的文档id
+     * @param directoryId 所在目录id
+     */
+    void deleteManuscript(Long id, Long directoryId);
 }
