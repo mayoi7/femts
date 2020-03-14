@@ -8,6 +8,7 @@ import com.xidian.femts.service.DirectoryService;
 import com.xidian.femts.service.InternalCacheService;
 import com.xidian.femts.service.ManuscriptService;
 import com.xidian.femts.service.UserService;
+import com.xidian.femts.utils.ListUtils;
 import com.xidian.femts.vo.DirectoryElement;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import static com.xidian.femts.constants.UserQueryCondition.ID;
@@ -155,7 +157,7 @@ public class DirectoryServiceImpl implements DirectoryService {
     @CacheEvict(cacheNames = "directory", key = "#parentId")
     @Transactional(rollbackFor = Exception.class)
     public Directory createAndAppendDirectory(Long parentId, String name, Long userId, boolean visible) {
-        Directory parent = cacheService.findById(parentId);
+        Directory parent = cacheService.findById_Directory(parentId);
         if (parent == null) {
             log.error("[DIR] parent directory is not found <parent_id: {}>", parentId);
             return null;
@@ -192,5 +194,34 @@ public class DirectoryServiceImpl implements DirectoryService {
         }
         parent.setDocs(docs);
         return directoryRepository.save(parent);
+    }
+
+    @Override
+    @CacheEvict(cacheNames = "directory", key = "#id")
+    public void deleteManuscript(Long id, Long directoryId) {
+        Directory directory = cacheService.findById_Directory(directoryId);
+        if (directory == null) {
+            log.error("[DOC] document directory is no longer valid or has been deleted " +
+                    "<doc_id: {}, directory_id: {}>", id, directoryId);
+            return;
+        }
+        // 获取id列表
+        String docIds = directory.getDocs();
+        if (StringUtils.isEmpty(docIds)) {
+            // 如果本身就没有数据，直接返回
+            log.warn("[DIRECTORY] doc id list is null but need to delete <directory_id: {}>", id);
+            return;
+        }
+        List<String> idList = ListUtils.string2List(docIds);
+        Iterator<String> iterator = idList.iterator();
+        while(iterator.hasNext()) {
+            if (iterator.next().equals(directoryId.toString())) {
+                iterator.remove();
+                break;
+            }
+        }
+        String deletedIdList = ListUtils.list2String(idList);
+        directory.setDocs(deletedIdList);
+        directoryRepository.save(directory);
     }
 }

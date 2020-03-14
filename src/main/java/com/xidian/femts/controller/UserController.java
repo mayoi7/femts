@@ -2,6 +2,7 @@ package com.xidian.femts.controller;
 
 import com.xidian.femts.constants.RedisKeys;
 import com.xidian.femts.constants.UserQueryCondition;
+import com.xidian.femts.constants.UserState;
 import com.xidian.femts.entity.User;
 import com.xidian.femts.exception.ParamException;
 import com.xidian.femts.service.impl.EmailService;
@@ -10,6 +11,7 @@ import com.xidian.femts.service.UserService;
 import com.xidian.femts.utils.TokenUtils;
 import com.xidian.femts.vo.ResultVO;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
@@ -141,4 +143,60 @@ public class UserController {
             return ResultVO.SUCCESS;
         }
     }
+
+    /**
+     * 修改用户状态，包含赋权以及锁定功能
+     * @param userId 用户id
+     * @param state 更新后的用户状态
+     * @return 返回成功与否的提示信息
+     */
+    @PostMapping("/state/{userId}")
+    @RequiresRoles("sp_admin")
+    public ResultVO modifyUserState(@PathVariable Long userId, @RequestBody UserState state) {
+        if (state == UserState.SUPER_ADMIN) {
+            // 获取当前登陆用户信息及ip
+            String authorizer = TokenUtils.getLoggedUserInfo();
+            String ip = TokenUtils.getLoggedUserInfo();
+            log.error("[USER] user try to authorize super admin, blocked " +
+                    "<authorizer_name: {}, authorizer_ip: {}, authorized_id: {}>", authorizer, ip, userId);
+            return new ResultVO(BAD_REQUEST, "禁止授权超级管理员");
+        }
+        User user = userService.findByCondition(userId.toString(), UserQueryCondition.ID);
+        if (user == null) {
+            log.error("[USER] user id is not existed <user_id: {}>", userId);
+            return new ResultVO(BAD_REQUEST, "用户id不存在");
+        }
+        if (user.getState() == state) {
+            return new ResultVO("重复更改");
+        }
+        user.setState(state);
+        user = userService.saveUser(user);
+        return new ResultVO(user);
+    }
+
+    /**
+     * 给用户授权超级管理员<br/>
+     * 开发者接口，所有访问该接口的用户，个人信息都会被强制记录
+     * @param userId 被授权用户id
+     * @return 返回被授权用户信息
+     */
+    @PostMapping("/authorize/superadmin/{userId}")
+    @RequiresRoles("sp_admin")
+    public ResultVO authorizeSuperAdmin(@PathVariable Long userId) {
+        // 获取当前登陆用户信息及ip
+        String authorizer = TokenUtils.getLoggedUserInfo();
+        String ip = TokenUtils.getLoggedUserInfo();
+        log.warn("[USER] user try to authorize super admin " +
+                "<authorizer_name: {}, authorizer_ip: {}, authorized_id: {}>", authorizer, ip, userId);
+
+        User user = userService.findByCondition(userId.toString(), UserQueryCondition.ID);
+        if (user == null) {
+            log.error("[USER] user id is not existed <user_id: {}>", userId);
+            return new ResultVO(BAD_REQUEST, "用户id不存在");
+        }
+        user.setState(UserState.SUPER_ADMIN);
+        user = userService.saveUser(user);
+        return new ResultVO(user);
+    }
+
 }
