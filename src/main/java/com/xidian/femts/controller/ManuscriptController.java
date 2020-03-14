@@ -1,10 +1,7 @@
 package com.xidian.femts.controller;
 
 import com.alibaba.fastjson.JSON;
-import com.xidian.femts.constants.FileType;
-import com.xidian.femts.constants.OptionType;
-import com.xidian.femts.constants.UserQueryCondition;
-import com.xidian.femts.constants.UserState;
+import com.xidian.femts.constants.*;
 import com.xidian.femts.dto.DocumentReq;
 import com.xidian.femts.dto.DocumentResp;
 import com.xidian.femts.entity.Directory;
@@ -21,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 import static com.xidian.femts.constants.UserQueryCondition.ID;
+import static com.xidian.femts.constants.UserQueryCondition.USERNAME;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
@@ -88,12 +86,20 @@ public class ManuscriptController {
         if (id == null) {
             manuscript = createFile(document);
         } else {
-            manuscript = cacheService.findById_Manuscript(id);
-            if (manuscript == null) {
+            Manuscript toUpdate = cacheService.findById_Manuscript(id);
+            if (toUpdate == null) {
                 log.error("[DOC] doc id not found, will create file <manuscript_id: {}>", id);
                 manuscript = createFile(document);
             } else {
-                manuscript = updateFile(id, document);
+                // 先校验用户是否有权限更新文档
+                String username = TokenUtils.getLoggedUserInfo();
+                User user = userService.findByCondition(username, USERNAME);
+                if (checkUpdatePermission(toUpdate, user)) {
+                    manuscript = updateFile(toUpdate, document);
+                } else {
+                    log.error("[DOC] user unauthorized update document <user: {}>", user);
+                    return new ResultVO(BAD_REQUEST, "无权更新");
+                }
             }
         }
         if (manuscript == null) {
@@ -103,6 +109,33 @@ public class ManuscriptController {
             DocumentResp resp = new DocumentResp(manuscript, document.getContent(),
                     document.getCreator(), document.getEditor());
             return new ResultVO(resp);
+        }
+    }
+
+    /**
+     * 检查用户是否有权限更新文档<br/>
+     * 以下情况才可以进行更新：<br/>
+     * 1. 更新者就是文档创建者<br/>
+     * 2. 文档设置为公开<br/>
+     * 2. 文档设置为仅上级可编辑，且更新人就是操作人<br/>
+     * @param manuscript 文档数据
+     * @param user 更新人信息
+     * @return true：可以进行更新
+     */
+    private boolean checkUpdatePermission(Manuscript manuscript, User user) {
+        if (user.getId().equals(manuscript.getCreatedBy())) {
+            return true;
+        }
+        switch (manuscript.getLevel()) {
+            case CONFIDENTIAL:
+                User creator = userService.findByCondition(manuscript.getCreatedBy().toString(), ID);
+                return user.getLevel() > creator.getLevel();
+            case PUBLIC:
+                return true;
+            case UNEDITABLE:
+            case PRIVATE:
+            default:
+                return false;
         }
     }
 
@@ -131,17 +164,12 @@ public class ManuscriptController {
     /**
      * 更新文件，会同时更新文件系统中的文件<br/>
      * 实时性较强，不能采用消息队列异步执行
-     * @param id 文档id（需要提前确认id存在）
-     * @param document 文档数据
+     * @param manuscript 数据库中待更新的文档数据
+     * @param document 新文档数据
      * @return 返回更新后的文档数据，如果返回空说明更新失败
      */
-    private Manuscript updateFile(Long id, DocumentReq document) {
+    private Manuscript updateFile(Manuscript manuscript, DocumentReq document) {
         // 1. 更新数据库中content表
-        Manuscript manuscript = cacheService.findById_Manuscript(id);
-        if (id == null) {
-            log.error("[DOC] doc id is not found <doc_id: {}>", id);
-            return null;
-        }
         Long contentId = manuscriptService
                 .updateContent(manuscript.getContentId(), document.getContent());
         if (!contentId.equals(manuscript.getContentId())) {
