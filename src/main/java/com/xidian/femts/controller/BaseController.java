@@ -22,6 +22,11 @@ public class BaseController {
         return "/index";
     }
 
+    @GetMapping("error")
+    public String error() {
+        return "/error";
+    }
+
     @GetMapping("register")
     public String register() {
         return "/register";

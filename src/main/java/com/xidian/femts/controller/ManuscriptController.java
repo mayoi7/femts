@@ -236,7 +236,8 @@ public class ManuscriptController {
     public ResultVO listVisibleDirectory(@PathVariable(value = "id", required = false) Long id) {
         if (id == null) {
             // 如果id不存在，则赋予根目录id
-            id = 0L;
+            // 注意，根目录id不是0，而是1
+            id = 1L;
         }
         String username = TokenUtils.getLoggedUserInfo();
         User user = userService.findByCondition(username, UserQueryCondition.USERNAME);

@@ -1,10 +1,8 @@
 package com.xidian.femts.controller;
 
+import com.xidian.femts.exception.ParamException;
 import com.xidian.femts.vo.ResultVO;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
@@ -18,8 +16,23 @@ import java.io.IOException;
  * @email acerola.orion@foxmail.com
  */
 @RestController
-@RequestMapping("/api/1.0/test")
+@RequestMapping("/test")
 public class TestController {
+
+    @GetMapping("rte")
+    public ResultVO testRuntimeException() {
+        throw new RuntimeException();
+    }
+
+    @GetMapping("ce")
+    public ResultVO testCheckedException() throws Exception {
+        throw new Exception();
+    }
+
+    @GetMapping("pe")
+    public ResultVO testCustomException() throws ParamException {
+        throw new ParamException();
+    }
 
     @PostMapping(value = "/upload")
     public ResultVO upload(@RequestParam("file") MultipartFile file,
