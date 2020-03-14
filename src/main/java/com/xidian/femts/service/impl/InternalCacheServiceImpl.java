@@ -33,7 +33,7 @@ public class InternalCacheServiceImpl implements InternalCacheService {
 
     @Override
     @Cacheable(cacheNames = "directory", key = "#id")
-    public Directory findById(Long id) {
+    public Directory findById_Directory(Long id) {
         return directoryRepository.findById(id).orElseGet(() -> {
             log.warn("[DIR] no directory with such id <id: {}>", id);
             return null;

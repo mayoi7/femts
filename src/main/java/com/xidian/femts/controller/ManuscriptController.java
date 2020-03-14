@@ -200,6 +200,33 @@ public class ManuscriptController {
     }
 
     /**
+     * 删除文档数据<br/>
+     * 并不真正删除文档数据，仅删除目录表中数据，使接口访问不到文档数据即可
+     * @param id 待删除的文档id
+     * @return 返回删除是否成功的响应
+     */
+    @DeleteMapping("/{id}")
+    public ResultVO deleteManuscript(@PathVariable Long id) {
+        Manuscript manuscript = cacheService.findById_Manuscript(id);
+        if (manuscript == null) {
+            log.error("[DOC] doc to delete is not existed <doc_id: {}>", id);
+            return new ResultVO(BAD_REQUEST, "待删除的文档不存在");
+        }
+        // 获取当前登陆用户，查询是否有权操作
+        String username = TokenUtils.getLoggedUserInfo();
+        User user = userService.findByCondition(username, USERNAME);
+        if (user.getId().equals(manuscript.getCreatedBy()) ||
+                user.getState().getCode() >= UserState.ADMIN.getCode()) {
+            // 只有当前用户是文档创建者或管理员时，才可以删除该文档
+            directoryService.deleteManuscript(id, manuscript.getDirectoryId());
+            return ResultVO.SUCCESS;
+        } else {
+            log.error("[DOC] user unauthorized delete document <user: {}>", user);
+            return new ResultVO(BAD_REQUEST, "无权删除");
+        }
+    }
+
+    /**
      * 检查用户对某文档的权限
      * <p>
      *     规则：<br/>

@@ -58,10 +58,20 @@ public class ListUtils {
      * @return 字符串列表
      */
     public static List<String> string2List(String string) {
+        return string2List(string, DEFAULT_DELIMITER);
+    }
+
+    /**
+     * 将字符串转换成按分隔符分割的列表
+     * @param string 初始字符串
+     * @param delimiter 分隔符
+     * @return 字符串列表
+     */
+    public static List<String> string2List(String string, String delimiter) {
         if (StringUtils.isEmpty(string)) {
             return new ArrayList<>();
         }
-        String[] result = string.split(DEFAULT_DELIMITER);
+        String[] result = string.split(delimiter);
         List<String> list = new ArrayList<>(result.length);
         list.addAll(Arrays.asList(result));
         return list;

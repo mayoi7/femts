@@ -18,7 +18,7 @@ public interface InternalCacheService {
      * @param id 主键
      * @return 数据表中对象
      */
-    Directory findById(Long id);
+    Directory findById_Directory(Long id);
 
     /**
      * 根据id查找目录名称<br/>
