@@ -83,21 +83,25 @@ public class ManuscriptController {
     public ResultVO createOrUpdateManuscript(@PathVariable(value = "id", required = false) Long id,
                                              @RequestBody DocumentReq document) {
         Manuscript manuscript;
+        // 先获取当前登陆的用户，即操作人
+        String username = TokenUtils.getLoggedUserInfo();
+        User operator = userService.findByCondition(username, USERNAME);
+        Long operatorId = operator.getId();
+
         if (id == null) {
-            manuscript = createFile(document);
+            manuscript = createFile(document, operatorId);
         } else {
+            // 查出待更新文档数据
             Manuscript toUpdate = cacheService.findById_Manuscript(id);
             if (toUpdate == null) {
                 log.error("[DOC] doc id not found, will create file <manuscript_id: {}>", id);
-                manuscript = createFile(document);
+                manuscript = createFile(document, operatorId);
             } else {
                 // 先校验用户是否有权限更新文档
-                String username = TokenUtils.getLoggedUserInfo();
-                User user = userService.findByCondition(username, USERNAME);
-                if (checkUpdatePermission(toUpdate, user)) {
-                    manuscript = updateFile(toUpdate, document);
+                if (checkUpdatePermission(toUpdate, operatorId, operator.getLevel())) {
+                    manuscript = updateFile(toUpdate, document, operatorId);
                 } else {
-                    log.error("[DOC] user unauthorized update document <user: {}>", user);
+                    log.error("[DOC] user unauthorized update document <user: {}>", operator);
                     return new ResultVO(BAD_REQUEST, "无权更新");
                 }
             }
@@ -106,8 +110,9 @@ public class ManuscriptController {
             log.error("[DOCUMENT] create/update file failed <document: {}>", JSON.toJSONString(document));
             return new ResultVO(BAD_REQUEST, "数据异常");
         } else {
-            DocumentResp resp = new DocumentResp(manuscript, document.getContent(),
-                    document.getCreator(), document.getEditor());
+            String creatorName = userService.findUsernameById(manuscript.getCreatedBy());
+            String editorName = userService.findUsernameById(manuscript.getModifiedBy());
+            DocumentResp resp = new DocumentResp(manuscript, document.getContent(), creatorName, editorName);
             return new ResultVO(resp);
         }
     }
@@ -119,17 +124,18 @@ public class ManuscriptController {
      * 2. 文档设置为公开<br/>
      * 2. 文档设置为仅上级可编辑，且更新人就是操作人<br/>
      * @param manuscript 文档数据
-     * @param user 更新人信息
+     * @param editorId 操作人id，禁止为空
+     * @param editorLevel 用户人权限级别
      * @return true：可以进行更新
      */
-    private boolean checkUpdatePermission(Manuscript manuscript, User user) {
-        if (user.getId().equals(manuscript.getCreatedBy())) {
+    private boolean checkUpdatePermission(Manuscript manuscript, Long editorId, Integer editorLevel) {
+        if (editorId.equals(manuscript.getCreatedBy())) {
             return true;
         }
         switch (manuscript.getLevel()) {
             case CONFIDENTIAL:
                 User creator = userService.findByCondition(manuscript.getCreatedBy().toString(), ID);
-                return user.getLevel() > creator.getLevel();
+                return editorLevel > creator.getLevel();
             case PUBLIC:
                 return true;
             case UNEDITABLE:
@@ -143,11 +149,11 @@ public class ManuscriptController {
      * 创建文件，不需要创建对应的实体文件，也不需要将文件上传到文件系统<br/>
      * 只有当用户点击下载后才触发下载操作
      * @param document 文档数据
+     * @param creatorId 创建人用户id
      * @return 返回存储后的文档数据，携带有id信息；如果返回空说明插入失败
      */
-    private Manuscript createFile(DocumentReq document) {
+    private Manuscript createFile(DocumentReq document, Long creatorId) {
         Long contentId = manuscriptService.saveContent(document.getContent());
-        Long creatorId = userService.findIdByUsername(document.getCreator());
         Manuscript manuscript = manuscriptService.saveFile(creatorId, document.getDirectoryId(),
                 contentId, document.getTitle(), FileType.CUSTOM, null, null, document.getLevel());
         // 在目录表中记录
@@ -166,9 +172,10 @@ public class ManuscriptController {
      * 实时性较强，不能采用消息队列异步执行
      * @param manuscript 数据库中待更新的文档数据
      * @param document 新文档数据
+     * @param editorId 编辑人用户id
      * @return 返回更新后的文档数据，如果返回空说明更新失败
      */
-    private Manuscript updateFile(Manuscript manuscript, DocumentReq document) {
+    private Manuscript updateFile(Manuscript manuscript, DocumentReq document, Long editorId) {
         // 1. 更新数据库中content表
         Long contentId = manuscriptService
                 .updateContent(manuscript.getContentId(), document.getContent());
@@ -181,7 +188,6 @@ public class ManuscriptController {
             return null;
         }
         // 2. 修改文档编辑人
-        Long editorId = userService.findIdByUsername(document.getEditor());
         manuscript = manuscriptService.updateEditor(manuscript.getId(), editorId);
 
         // 3. 生成新文件（txt类型，类型在数据库中标记为枚举中的CUSTOM类型）

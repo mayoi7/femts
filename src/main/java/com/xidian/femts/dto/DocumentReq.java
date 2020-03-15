@@ -23,10 +23,4 @@ public class DocumentReq {
 
     /** 文档可见级别 */
     private SecurityLevel level;
-
-    /** 创建者用户名 */
-    private String creator;
-
-    /** 编辑者用户名 */
-    private String editor;
 }
