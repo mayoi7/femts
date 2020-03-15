@@ -124,6 +124,12 @@
             display: inline-flex;
             padding-left: 32px;
         }
+
+        .container .frame .el-input {
+            margin: 2px 10px 10px 15px;
+            height: 40px;
+            font-size: 26px;
+        }
     </style>
 </head>
 <body>
@@ -243,9 +249,10 @@
             </el-tree>
         </div>
         <div class="frame" >
-            <div class="title">{{doc.title}}</div>
+            <el-input class="edit-title" v-if="show_editor" placeholder="请输入标题" v-model="doc.title" clearable></el-input>
+            <div class="title" v-else>{{doc.title}}</div>
             <div class="info" style="margin: 2px 10px 10px 15px;">
-                <div class="author d-inline-block">{{doc.author}}</div>
+                <div class="author d-inline-block">{{doc.creator}}</div>
                 <div class="function d-inline-block" style="margin-left: 20px; font-size: 15px; float:right">
                     <el-button type="text">编辑</el-button>
                     <el-button type="text">下载</el-button>
@@ -296,7 +303,7 @@
                                 </el-dropdown-item>
                             </el-dropdown-menu>
                         </el-dropdown>
-                        <el-button type="primary" plain>保存文档</el-button>
+                        <el-button type="primary" plain :loading="loader.save_btn" @click="saveDoc">保存文档</el-button>
                     </div>
                 </div>
                 <div v-else  id="docFrame" v-html="doc.content"></div>
@@ -314,10 +321,19 @@
 <script src="../static/vendor/axios/axios.js"></script>
 <script src="../static/js/femts.min.js"></script>
 <script>
+    let editor;
+    const options = {
+        // cssPath : '/css/index.css',
+        filterMode : true
+    };
     KindEditor.options.filterMode = false;
     KindEditor.ready(function(K) {
         window.editor = K.create('#editor_id');
+        editor = K.create('textarea[name="content"]', options);
     });
+
+
+    const SECURITY_LEVEL = ["PRIVATE", "UNEDITABLE", "CONFIDENTIAL", "PUBLIC"];
 
     let $app = new Vue({
         el: '#app',
@@ -327,6 +343,9 @@
                 show_setting: false,
                 show_editor: true,
                 setting_select: 1,
+                loader: {
+                    save_btn: false
+                },
                 props: {
                     label: 'name',
                     children: 'children',
@@ -335,10 +354,13 @@
                 node: [],
                 resolve: [],
                 doc: {
+                    id: 1,
+                    directoryId: 2,
                     title: "就撒打击啥的案件哦我既然asdasda 啥的",
-                    author: "刘昊楠123",
-                    created_at: '2019/07/12 12:56',
-                    modified_at: '2020/01/02 05:23',
+                    creator: "刘昊楠123",
+                    created: '2019/07/12 12:56',
+                    editor: "张三456",
+                    edited: '2020/01/02 05:23',
                     content: `<div style="width:595.0pt;margin-bottom:56.0pt;margin-top:85.0pt;margin-left:85.0pt;margin-right:56.0pt;"><p style="text-align:center;"><span style="font-family:'楷体';font-size:16.0pt;font-weight:bold;">&#26159;&#30701;&#21457;&#25151;&#39030;&#19978;&#21453;&#20498;&#26159;&#26041;&#24335;</span></p><p>&#20799;&#21834;<span style="font-family:'宋体';font-size:16.0pt;">&#25746;&#26086;</span><span style="font-family:'宋体';font-size:16.0pt;font-style:italic;">&#38463;</span><span style="font-style:italic;">&#26031;&#39039;a</span>F&#21380;s<span style="text-decoration:underline;">d&#38750;</span>dss</p><p>&#25746;<span style="font-weight:bold;">&#26086;&#38463;&#26031;</span>&#39039;adsaa<span id="_GoBack"/></p><p>   &#21714;&#21714;&#21714;</p><p>&#21457;&#29983;&#22823;&#24133;</p></div>`
                 }
             }
@@ -426,6 +448,38 @@
             },
             download() {
 
+            },
+            saveDoc() {
+                let doc = this.$data.doc;
+                let loader = this.$data.loader;
+                loader.save_btn = true;
+
+                editor.sync();
+                let html = editor.html();
+
+                let document = {
+                    title: doc.title,
+                    content: html,
+                    directoryId: doc.directoryId,
+                    level: SECURITY_LEVEL[this.$data.setting_select]
+                }
+
+                axios.post("https://www.fastmock.site/mock/b643231b81d6851b3bf8fe14314271d4/femts/api/1.0/doc/:id", document)
+                    .then(res => {
+                        console.log(res.data);
+                        loader.save_btn = false;
+                        if (res.data.code === 200) {
+                            this.$message({
+                                message: '保存成功',
+                                type: 'success'
+                            });
+                        } else {
+                            this.$message.error(res.data.data);
+                        }
+                    }).catch(err => {
+                    loader.save_btn = false;
+                    this.$message.error(err);
+                })
             },
             selectSecurityLevel(command) {
                 console.log(command)
