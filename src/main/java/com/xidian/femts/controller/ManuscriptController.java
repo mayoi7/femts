@@ -1,7 +1,10 @@
 package com.xidian.femts.controller;
 
 import com.alibaba.fastjson.JSON;
-import com.xidian.femts.constants.*;
+import com.xidian.femts.constants.FileType;
+import com.xidian.femts.constants.OptionType;
+import com.xidian.femts.constants.UserQueryCondition;
+import com.xidian.femts.constants.UserState;
 import com.xidian.femts.dto.DocumentReq;
 import com.xidian.femts.dto.DocumentResp;
 import com.xidian.femts.entity.Directory;
@@ -338,6 +341,31 @@ public class ManuscriptController {
         } else {
             return new ResultVO(directory.getId());
         }
+    }
+
+    /**
+     * 修改文档目录名称、父级目录或权限<br/>
+     * 仅目录创建者或管理员才有权修改
+     * @param directoryId 目录id
+     * @param name 修改后的目录名称
+     * @param parentId 修改后的父级目录id
+     * @param visible 修改后的文档可视性，true：所有人可见，false：私人可见
+     * @return 返回处理结果成功与否的标识
+     */
+    @PostMapping("/directory/edit/{id}")
+    public ResultVO editDirectoryName(@PathVariable("id") Long directoryId,
+                                      @RequestParam(value = "name", required = false) String name,
+                                      @RequestParam(value = "parent", required = false) Long parentId,
+                                      @RequestParam(value = "visible", required = false) Boolean visible) {
+        if (name == null && parentId == null && visible == null) {
+            return ResultVO.SUCCESS;
+        }
+        Directory directory = directoryService.updateDirectory(directoryId, name, parentId, visible);
+        if (directory == null) {
+            // 该方法在service层打印过日志，不需要重复打印
+            return new ResultVO(BAD_REQUEST, "目录id不存在");
+        }
+        return ResultVO.SUCCESS;
     }
 }
 

@@ -22,7 +22,7 @@ public interface InternalCacheService {
 
     /**
      * 根据id查找目录名称<br/>
-     * 管理员接口，一般情况下不允许使用，应使用{@link DirectoryService#f}
+     * 管理员接口，一般情况下不允许使用，应使用{@link InternalCacheService#findNameByIdIfVisible_Directory}
      * @param id 目录id
      * @return 目录名称，如果为空说明id不存在
      */

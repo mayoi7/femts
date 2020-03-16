@@ -57,4 +57,14 @@ public interface DirectoryService {
      * @param directoryId 所在目录id
      */
     void deleteManuscript(Long id, Long directoryId);
+
+    /**
+     * 更新目录数据
+     * @param directoryId 待更新的目录id
+     * @param name 更新后的名称
+     * @param parentId 更新后的父级目录id
+     * @param visible 更新后的文档可视性
+     * @return 更新后的文档数据
+     */
+    Directory updateDirectory(Long directoryId, String name, Long parentId, Boolean visible);
 }

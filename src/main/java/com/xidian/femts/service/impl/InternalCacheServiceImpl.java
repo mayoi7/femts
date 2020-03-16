@@ -41,7 +41,6 @@ public class InternalCacheServiceImpl implements InternalCacheService {
     }
 
     @Override
-    @Cacheable(cacheNames = "directoryName", key = "#id")
     public String findNameById_Directory(Long id) {
         return directoryRepository.findNameById(id);
     }
