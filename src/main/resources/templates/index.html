@@ -255,7 +255,25 @@
                 <div class="author d-inline-block">{{doc.creator}}</div>
                 <div class="function d-inline-block" style="margin-left: 20px; font-size: 15px; float:right">
                     <el-button type="text" @click="edit">编辑</el-button>
-                    <el-button type="text" @click="download">下载</el-button>
+                    <el-button type="text" @click="show_download_dialog = true">下载</el-button>
+                    <el-dialog
+                            title="选择下载格式"
+                            :visible.sync="show_download_dialog"
+                            width="39%">
+                        <el-radio-group v-model="file_type">
+                            <el-radio :label="0">doc</el-radio>
+                            <el-radio :label="1">docx</el-radio>
+                            <el-radio :label="2">txt</el-radio>
+                            <el-radio :label="3">pdf</el-radio>
+                            <el-radio :label="4">ofd</el-radio>
+                            <el-radio :label="5">rtf</el-radio>
+                            <el-radio :label="6">无格式</el-radio>
+                        </el-radio-group>
+                        <span slot="footer" class="dialog-footer">
+                        <el-button @click="show_download_dialog = false">取消</el-button>
+                        <el-button type="primary" @click="download">确定</el-button>
+                      </span>
+                    </el-dialog>
                 </div>
             </div>
             <hr>
@@ -338,12 +356,15 @@
         }
     };
     const SECURITY_LEVEL = ["PRIVATE", "UNEDITABLE", "CONFIDENTIAL", "PUBLIC"];
+    const FILE_TYPE = ["WORD2003", "WORD2007", "TXT", "PDF", "OFD", "RTF", "CUSTOM"];
     tinymce.init(options);
 
     let $app = new Vue({
         el: '#app',
         data () {
             return {
+                file_type: 1,
+                show_download_dialog: false,
                 show_alert: false,
                 show_setting: false,
                 show_editor: false,
@@ -468,6 +489,7 @@
                 }, wait_time);
             },
             download() {
+                this.$data.show_download_dialog = false;
             },
             saveDoc() {
                 let doc = this.$data.doc;
@@ -502,8 +524,8 @@
                 })
             },
             selectSecurityLevel(command) {
-                console.log(command)
-                this.$data.setting_select = command
+                console.log(command);
+                this.$data.setting_select = command;
             }
         }
     });
