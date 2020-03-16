@@ -11,7 +11,10 @@ import com.xidian.femts.service.UserService;
 import com.xidian.femts.utils.ListUtils;
 import com.xidian.femts.vo.DirectoryElement;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -197,7 +200,11 @@ public class DirectoryServiceImpl implements DirectoryService {
     }
 
     @Override
-    @CacheEvict(cacheNames = "directory", key = "#id")
+    @Transactional(rollbackFor = Exception.class)
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "doc", key = "#id"),
+            @CacheEvict(cacheNames = "docTitle", key = "#id")
+    })
     public void deleteManuscript(Long id, Long directoryId) {
         Directory directory = cacheService.findById_Directory(directoryId);
         if (directory == null) {
@@ -223,5 +230,26 @@ public class DirectoryServiceImpl implements DirectoryService {
         String deletedIdList = ListUtils.list2String(idList);
         directory.setDocs(deletedIdList);
         directoryRepository.save(directory);
+    }
+
+    @Override
+    @Caching(put = @CachePut(cacheNames = "directory", key = "#directoryId"),
+            // 定向更新所有用户的可见目录不可行，所以选择清除所有缓存，如果测试结果更新情况较多，考虑取消该缓存
+            evict = @CacheEvict(cacheNames = "directoryNameVisible", allEntries = true))
+    public Directory updateDirectory(Long directoryId, String name, Long parentId, Boolean visible) {
+        Directory directory = cacheService.findById_Directory(directoryId);
+        if (directory == null) {
+           return null;
+        }
+        if (Strings.isNotBlank(name)) {
+            directory.setName(name);
+        }
+        if (parentId != null) {
+            directory.setParent(parentId);
+        }
+        if (visible != null) {
+            directory.setVisible(visible);
+        }
+        return directoryRepository.save(directory);
     }
 }
