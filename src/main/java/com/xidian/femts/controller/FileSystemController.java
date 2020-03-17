@@ -143,6 +143,10 @@ public class FileSystemController {
         }
         String hash = fileData.hash;
         bytes = fileData.bytes;
+        if (bytes == null) {
+            log.error("[FILE] process between file to bytes has failed <file_path: {}>", file.getPath());
+            return new ResultVO(INTERNAL_SERVER_ERROR, "文件字节转换错误");
+        }
 
         // 5. 将文件上传到fastdfs服务器
         String fileId = storageService.upload(bytes, fileType.getName());

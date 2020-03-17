@@ -3,6 +3,7 @@ package com.xidian.femts.utils;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
@@ -44,21 +45,27 @@ public class MulFileUtils {
      * @return 对应的字节数组，如果转换失败会返回空
      */
     public static byte[] changeFileToBytes(File file)  {
-        // 文件大小不得超过1.9G
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream((int)file.length());
-             BufferedInputStream in = new BufferedInputStream(new FileInputStream(file))) {
-
-            int buf_size = 1024;
-            byte[] buffer = new byte[buf_size];
-            int len = 0;
-            while((len = in.read(buffer,0, buf_size)) != -1){
-                bos.write(buffer,0, len);
-            }
-            return bos.toByteArray();
-        } catch (IOException e) {
-            log.error("[FILE] file convert to bytes failed <file_path: {}>", file.getPath());
-            return null;
+        try {
+            return FileUtils.readFileToByteArray(file);
+        } catch (IOException ioe) {
+            log.error("[FILE] file convert to bytes failed <file_path: {}>", file.getPath(), ioe);
         }
+        return null;
+//        // 文件大小不得超过1.9G
+//        try (ByteArrayOutputStream bos = new ByteArrayOutputStream((int)file.length());
+//             BufferedInputStream in = new BufferedInputStream(new FileInputStream(file))) {
+//
+//            int buf_size = 1024;
+//            byte[] buffer = new byte[buf_size];
+//            int len = 0;
+//            while((len = in.read(buffer,0, buf_size)) != -1){
+//                bos.write(buffer,0, len);
+//            }
+//            return bos.toByteArray();
+//        } catch (IOException e) {
+//            log.error("[FILE] file convert to bytes failed <file_path: {}>", file.getPath());
+//            return null;
+//        }
     }
 
     /**
