@@ -1,5 +1,7 @@
 package com.xidian.femts.service.impl;
 
+import com.xidian.femts.entity.Manuscript;
+import com.xidian.femts.repository.ManuscriptRepository;
 import com.xidian.femts.service.ManuscriptService;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -21,6 +23,9 @@ class ManuscriptServiceTest {
     @Autowired
     private ManuscriptService manuscriptService;
 
+    @Autowired
+    private ManuscriptRepository manuscriptRepository;
+
     @Test
     void findById() {
     }
@@ -36,5 +41,8 @@ class ManuscriptServiceTest {
 
     @Test
     void saveFile() {
+        Manuscript manuscript = manuscriptService.findByTitle(3L, "tf3");
+        manuscript.setTitle("tf4");
+        manuscriptRepository.save(manuscript);
     }
 }

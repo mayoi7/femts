@@ -3,6 +3,7 @@ package com.xidian.femts.utils;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
@@ -44,21 +45,27 @@ public class MulFileUtils {
      * @return 对应的字节数组，如果转换失败会返回空
      */
     public static byte[] changeFileToBytes(File file)  {
-        // 文件大小不得超过1.9G
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream((int)file.length());
-             BufferedInputStream in = new BufferedInputStream(new FileInputStream(file))) {
-
-            int buf_size = 1024;
-            byte[] buffer = new byte[buf_size];
-            int len = 0;
-            while((len = in.read(buffer,0, buf_size)) != -1){
-                bos.write(buffer,0, len);
-            }
-            return bos.toByteArray();
-        } catch (IOException e) {
-            log.error("[FILE] file convert to bytes failed <file_path: {}>", file.getPath());
-            return null;
+        try {
+            return FileUtils.readFileToByteArray(file);
+        } catch (IOException ioe) {
+            log.error("[FILE] file convert to bytes failed <file_path: {}>", file.getPath(), ioe);
         }
+        return null;
+//        // 文件大小不得超过1.9G
+//        try (ByteArrayOutputStream bos = new ByteArrayOutputStream((int)file.length());
+//             BufferedInputStream in = new BufferedInputStream(new FileInputStream(file))) {
+//
+//            int buf_size = 1024;
+//            byte[] buffer = new byte[buf_size];
+//            int len = 0;
+//            while((len = in.read(buffer,0, buf_size)) != -1){
+//                bos.write(buffer,0, len);
+//            }
+//            return bos.toByteArray();
+//        } catch (IOException e) {
+//            log.error("[FILE] file convert to bytes failed <file_path: {}>", file.getPath());
+//            return null;
+//        }
     }
 
     /**
@@ -68,7 +75,8 @@ public class MulFileUtils {
      * @return 返回创建后的文件对象，如果为空说明创建失败（已经进行了一次重试）
      */
     public static File changeBytesToFile(byte[] bytes, boolean needCreate) {
-        File file = new File("file/temp/007.docx");
+        // TODO: 2020/3/17 上线改为随机文件名，用户需要手动传入文件类型
+        File file = new File("file/temp/test-test.docx");
         try (OutputStream output = new FileOutputStream(file);
              BufferedOutputStream bufferedOutput = new BufferedOutputStream(output);
         ) {

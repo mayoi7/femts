@@ -7,6 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.converter.WordToHtmlConverter;
+import org.apache.poi.poifs.filesystem.DirectoryEntry;
+import org.apache.poi.poifs.filesystem.DocumentEntry;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.xwpf.converter.core.FileImageExtractor;
 import org.apache.poi.xwpf.converter.core.FileURIResolver;
 import org.apache.poi.xwpf.converter.xhtml.XHTMLConverter;
@@ -26,13 +29,16 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 /**
+ * 文件与html的转换器工具类
  * @author LiuHaonan
  * @date 16:02 2020/1/18
  * @email acerola.orion@foxmail.com
  */
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class File2HtmlUtils {
+public class FileHtmlConverter {
+
+    public static final String FILE_LOCAL_URL = "file/temp/" ;
 
     /**
      * 将文件字节数组转换为html格式字符串<br/>
@@ -161,5 +167,21 @@ public class File2HtmlUtils {
      */
     private static String convertTxtToHTML(byte[] bytes) {
         return new String(bytes);
+    }
+
+    public static byte[] convertHTMLToWord2007(String html) {
+        byte[] bytes = html.getBytes(StandardCharsets.UTF_8);
+        try (ByteArrayInputStream os = new ByteArrayInputStream(bytes);
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            POIFSFileSystem fs = new POIFSFileSystem();
+            DirectoryEntry directory = fs.getRoot();
+            DocumentEntry documentEntry = directory.createDocument("WordDocument", os);
+            fs.writeFilesystem(baos);
+            return baos.toByteArray();
+        } catch (Exception e) {
+            log.error("[FILE] convert html to doc failed");
+            e.printStackTrace();
+        }
+        return null;
     }
 }
