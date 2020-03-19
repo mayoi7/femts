@@ -338,6 +338,7 @@
 <script src="../static/vendor/axios/axios.js"></script>
 <script src="../static/js/femts.min.js"></script>
 <script>
+    const HOST = 'https://www.fastmock.site/mock/b643231b81d6851b3bf8fe14314271d4/femts';
     let wait_time = 10;
     // 编辑器配置
     const options = {
@@ -382,10 +383,10 @@
                 doc: {
                     id: 1,
                     directoryId: 2,
-                    title: "就撒打击啥的案件哦我既然asdasda 啥的",
-                    creator: "刘昊楠123",
+                    title: "测试文档标题English&*( $_)",
+                    creator: "刘昊楠05",
                     created: '2019/07/12 12:56',
-                    editor: "张三456",
+                    editor: "张三72",
                     edited: '2020/01/02 05:23',
                     content: `<div style="width:595.0pt;margin-bottom:56.0pt;margin-top:85.0pt;margin-left:85.0pt;margin-right:56.0pt;"><p style="text-align:center;"><span style="font-family:'楷体';font-size:16.0pt;font-weight:bold;">&#26159;&#30701;&#21457;&#25151;&#39030;&#19978;&#21453;&#20498;&#26159;&#26041;&#24335;</span></p><p>&#20799;&#21834;<span style="font-family:'宋体';font-size:16.0pt;">&#25746;&#26086;</span><span style="font-family:'宋体';font-size:16.0pt;font-style:italic;">&#38463;</span><span style="font-style:italic;">&#26031;&#39039;a</span>F&#21380;s<span style="text-decoration:underline;">d&#38750;</span>dss</p><p>&#25746;<span style="font-weight:bold;">&#26086;&#38463;&#26031;</span>&#39039;adsaa<span id="_GoBack"/></p><p>   &#21714;&#21714;&#21714;</p><p>&#21457;&#29983;&#22823;&#24133;</p></div>`
                 }
@@ -402,7 +403,7 @@
                     this.$data.node = node;
                     this.resolve = resolve;
                     let treeData;
-                    axios.get("https://www.fastmock.site/mock/b643231b81d6851b3bf8fe14314271d4/femts/directory/list/" + node.id)
+                    axios.get(HOST + "/directory/list/" + node.id)
                         .then(res => {
                             if (res.data.code === 200) {
                                 return resolve(res.data.data);
@@ -443,7 +444,7 @@
                         children: [],
                         visible: false
                     };
-                    axios.post("https://www.fastmock.site/mock/b643231b81d6851b3bf8fe14314271d4/femts/doc/directory/append/" + node.id, postData)
+                    axios.post(HOST + "/doc/directory/append/" + node.id, postData)
                         .then(res => {
                             if (res.data.code === 200) {
                                 // 如果返回200，则返回的数据为新目录的id
@@ -505,7 +506,7 @@
                     level: SECURITY_LEVEL[this.$data.setting_select]
                 };
 
-                axios.post("https://www.fastmock.site/mock/b643231b81d6851b3bf8fe14314271d4/femts/api/1.0/doc/:id", document)
+                axios.post(HOST + "/api/1.0/doc/:id", document)
                     .then(res => {
                         console.log(res.data);
                         loader.save_btn = false;
