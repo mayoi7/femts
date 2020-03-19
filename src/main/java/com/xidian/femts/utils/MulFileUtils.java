@@ -75,7 +75,8 @@ public class MulFileUtils {
      * @return 返回创建后的文件对象，如果为空说明创建失败（已经进行了一次重试）
      */
     public static File changeBytesToFile(byte[] bytes, boolean needCreate) {
-        File file = new File("file/temp/007.docx");
+        // TODO: 2020/3/17 上线改为随机文件名，用户需要手动传入文件类型
+        File file = new File("file/temp/test-test.docx");
         try (OutputStream output = new FileOutputStream(file);
              BufferedOutputStream bufferedOutput = new BufferedOutputStream(output);
         ) {

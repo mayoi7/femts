@@ -1,12 +1,18 @@
 package com.xidian.femts.controller;
 
 import com.xidian.femts.exception.ParamException;
+import com.xidian.femts.utils.MulFileUtils;
 import com.xidian.femts.vo.ResultVO;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 /**
  * 测试
@@ -60,5 +66,28 @@ public class TestController {
 //            e.printStackTrace();
 //        }
 //        return new ResultVO("failed");
+    }
+
+    @GetMapping("download")
+    public ResultVO download(HttpServletResponse response) {
+        File file = new File("file/temp/test.docx");
+        response.setHeader("Content-Type", "application/octet-stream;charset=utf-8");
+        response.setContentType("application/force-download");
+        String name = "测试文件.docx";
+        try {
+            response.addHeader("Content-Disposition", "attachment;filename=" + name + ";filename*=utf-8''"
+                    + URLEncoder.encode(name, "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        try {
+            byte[] bytes = MulFileUtils.changeFileToBytes(file);
+            OutputStream os = response.getOutputStream();
+            os.write(bytes);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+//        return new ResultVO(HttpStatus.INTERNAL_SERVER_ERROR, "发生异常");
     }
 }

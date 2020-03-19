@@ -191,7 +191,8 @@ public class ManuscriptController {
             return null;
         }
         // 2. 修改文档编辑人
-        manuscript = manuscriptService.updateEditor(manuscript.getId(), editorId);
+        manuscript.setModifiedBy(editorId);
+        manuscript = manuscriptService.updateFile(manuscript.getId(), manuscript);
 
         // 3. 生成新文件（txt类型，类型在数据库中标记为枚举中的CUSTOM类型）
         //    实际是将String类型转换为字节数据，模拟生成文件

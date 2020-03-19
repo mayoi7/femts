@@ -118,7 +118,7 @@ public class ManuscriptServiceImpl implements ManuscriptService {
                 .createdBy(userId).modifiedBy(userId)
                 .build();
 
-        Manuscript record = manuscriptRepository.save(manuscript);
+        Manuscript record = manuscriptRepository.saveAndFlush(manuscript);
         if (hash != null) {
             // 如果文件hash为空，说明文件未上传至文件系统，不需要存储文件标记
             Mark mark = new Mark(record.getId(), fileType, hash);
@@ -128,15 +128,15 @@ public class ManuscriptServiceImpl implements ManuscriptService {
     }
 
     @Override
-    public Manuscript updateEditor(Long docId, Long editorId) {
-        Manuscript manuscript = cacheService.findById_Manuscript(docId);
-        if (manuscript == null) {
-            log.error("[DOCUMENT] doc id is not found <doc_id: {}>", docId);
+    public Manuscript updateFile(Long docId, Manuscript manuscript) {
+        if (docId == null) {
+            log.error("[DOC] doc id can not be null");
             return null;
         }
-        manuscript.setModifiedBy(docId);
+        manuscript.setId(docId);
         return manuscriptRepository.save(manuscript);
     }
+
 
     @Override
     @Transactional(rollbackFor = Exception.class)

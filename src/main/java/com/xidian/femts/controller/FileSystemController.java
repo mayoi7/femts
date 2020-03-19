@@ -10,7 +10,7 @@ import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.entity.Mark;
 import com.xidian.femts.entity.User;
 import com.xidian.femts.service.*;
-import com.xidian.femts.utils.File2HtmlUtils;
+import com.xidian.femts.utils.FileHtmlConverter;
 import com.xidian.femts.utils.TokenUtils;
 import com.xidian.femts.vo.ResultVO;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +19,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URLEncoder;
 
 import static com.xidian.femts.utils.MulFileUtils.changeMulFileToFile;
 import static com.xidian.femts.utils.TokenUtils.generateSingleMark;
@@ -155,7 +158,7 @@ public class FileSystemController {
             return new ResultVO(INTERNAL_SERVER_ERROR, "服务器文件上传失败，请稍后重试");
         }
         // 6. 在数据库中保存文档信息
-        String htmlContent = File2HtmlUtils.convertFileBytesToHTML(bytes, fileType);
+        String htmlContent = FileHtmlConverter.convertFileBytesToHTML(bytes, fileType);
         Long contentId = manuscriptService.saveContent(htmlContent);
         Manuscript manuscript = manuscriptService.saveFile(userId, directoryId, contentId, mulFile.getName(), fileType, fileId, hash, level);
         if (manuscript == null) {
@@ -189,6 +192,64 @@ public class FileSystemController {
             return null;
         }
         return new File(basePath + newName);
+    }
+
+    /**
+     * 下载文档<br/>
+     * 第一版仅提供到doc文件的转换
+     * @param id 文档id
+     * @param type 文档类型，默认无格式
+     * @param response 响应体
+     * @return 文件流写入在response中
+     */
+    @GetMapping("download/{id}")
+    public ResultVO download(@PathVariable("id") Long id,
+                         @RequestParam(value = "type", defaultValue = "CUSTOM") FileType type,
+                         HttpServletResponse response) throws IOException {
+        Manuscript manuscript = cacheService.findById_Manuscript(id);
+        if (manuscript == null) {
+            return new ResultVO(BAD_REQUEST, "文档不存在");
+        }
+        response.setHeader("Content-Type", "application/octet-stream;charset=utf-8");
+        response.setContentType("application/force-download");
+
+        String content = cacheService.findContentById_Content(manuscript.getContentId());
+        // 可以内容允许为空字符串，但是不能为空值
+        if (content == null) {
+            log.error("[CONTENT] doc content is not exist <doc_id: {}, content_id: {}>",
+                    id, manuscript.getContentId());
+            return new ResultVO(INTERNAL_SERVER_ERROR, "文档内容异常");
+        }
+
+        byte[] bytes = FileHtmlConverter.convertHTMLToWord2007(content);
+        if (bytes == null) {
+            log.error("[FILE] file converter error <content_id: {}>", manuscript.getContentId());
+            return new ResultVO(INTERNAL_SERVER_ERROR, "文件下载异常");
+        }
+        // 一期默认全部下载为doc格式
+        String title = manuscript.getTitle() + ".doc";
+        try(OutputStream os = response.getOutputStream()) {
+            os.write(bytes);
+            response.addHeader("Content-Disposition", "attachment;filename=" + title + ";filename*=utf-8''"
+                    + URLEncoder.encode(title, "UTF-8"));
+        } catch (IOException ioe) {
+            log.error("[IO] get response output stream failed <response: {}>", response, ioe);
+            throw new IOException();
+        }
+
+        if (manuscript.getFileId() == null) {
+            /* 文件id不存在，说明文件未上传到fastdfs，
+             * 即文件是用户手动创建的（用户上传的文件都会自动执行将文件上传到服务器的操作），
+             * 我们目前统一将文件保存为doc文件格式，用户可以在word中自行进行格式转换。
+             * 注意，因为用户大概率会自行转换格式，且文档并非用户上传，
+             * 所以不在文件中埋标识符，而是直接返回给用户原本的文档
+             */
+            String fileId = storageService.upload(bytes, FileType.WORD2003.getName());
+            manuscript.setFileId(fileId);
+            manuscriptService.updateFile(manuscript.getId(), manuscript);
+        }
+        // 如向响应流中写入文件，则必须返回null
+        return null;
     }
 
 }
