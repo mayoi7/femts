@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>金融企业文稿追溯系统 - 管理员</title>
+    <link rel="stylesheet" href="../static/vendor/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="../static/vendor/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="../static/css/femts.min.css">
+    <link rel="stylesheet" href="../static/css/index.css">
+    <style>
+        a {
+            text-decoration: none !important;
+        }
+
+        .router-link-active {
+            text-decoration: none;
+        }
+
+        #main_content {
+            padding-left: 35px;
+            padding-right: 35px;
+        }
+    </style>
+</head>
+<body>
+<div id="app" @click="close_all">
+    <div id="wrapper">
+        <!-- sidebar -->
+        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+
+            <!-- Sidebar - Brand -->
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+                <div class="sidebar-brand-icon">
+                    <svg fill="#fff" t="1584939471378" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2591" width="40" height="40"><path d="M512 526.920559C627.36556 526.920559 720.887824 388.636618 720.887824 273.271058 720.887824 157.905498 627.36556 64.383234 512 64.383234 396.63444 64.383234 303.112176 157.905498 303.112176 273.271058 303.112176 388.636618 396.63444 526.920559 512 526.920559Z" p-id="2592"></path><path d="M138.986028 795.697556C138.986028 739.255073 179.926628 673.072662 230.432504 647.873462L323.330409 601.523353 393.697527 844.251261C393.697527 844.251261 395.665621 865.254552 430.842897 865.254552 466.020174 865.254552 466.020174 844.251261 466.020174 844.251261L466.020174 646.28503C466.020174 646.28503 467.616473 601.523353 513.483522 601.523353 559.350571 601.523353 559.350571 646.28503 559.350571 646.28503L559.350571 844.251261C559.350571 844.251261 571.342968 869.13051 599.758437 869.13051 628.173908 869.13051 631.602637 844.251261 631.602637 844.251261L700.49616 601.523353 793.549033 647.907144C844.063725 673.087053 885.013972 739.246607 885.013972 795.697556L885.013972 857.418612C885.013972 913.861094 839.259943 959.616766 782.821851 959.616766L241.178149 959.616766C184.738999 959.616766 138.986028 913.86956 138.986028 857.418612L138.986028 795.697556Z" p-id="2593"></path></svg>
+                </div>
+                <div class="sidebar-brand-text mx-3">数据管理</div>
+            </a>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider my-0">
+
+            <!-- Nav Item - Dashboard -->
+            <li class="nav-item active">
+                <router-link to="/"><a class="nav-link" href="javascript:void(0);">
+                <i class="fas fa-fw fa-tachometer-alt"></i>
+                    <span>监控大盘</span>
+                </a></router-link>
+            </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Data Management
+            </div>
+
+            <!-- Nav Item - Pages Collapse Menu -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
+                    <i class="fas fa-fw fa-cog"></i>
+                    <span><b>用户管理</b></span>
+                </a>
+                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+<!--                        <h6 class="collapse-header">Custom Components:</h6>-->
+                        <router-link to="/user-info"><a class="collapse-item" href="javascript:void(0);">用户信息查询</a></router-link>
+                        <router-link to="/user-record"><a class="collapse-item" href="javascript:void(0);">用户记录查询</a></router-link>
+                    </div>
+                </div>
+            </li>
+
+            <!-- Nav Item - Utilities Collapse Menu -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities" aria-expanded="true" aria-controls="collapseUtilities">
+                    <i class="fas fa-fw fa-wrench"></i>
+                    <span><b>文档管理</b></span>
+                </a>
+                <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <router-link to="/doc-info"><a class="collapse-item" href="javascript:void(0);">文档信息查询</a></router-link>
+                        <router-link to="/doc-record"><a class="collapse-item" href="javascript:void(0);">操作记录查询</a></router-link>
+                        <router-link to="/doc-trace"><a class="collapse-item" href="javascript:void(0);">标识文件溯源</a></router-link>
+                    </div>
+                </div>
+            </li>
+            <!-- Divider -->
+            <hr class="sidebar-divider d-none d-md-block">
+            <!-- Sidebar Toggler (Sidebar) -->
+            <div class="text-center d-none d-md-inline">
+                <button class="rounded-circle border-0" id="sidebarToggle" @click="collapseSidebar"></button>
+            </div>
+
+        </ul>
+
+        <!-- content -->
+        <div id="content-wrapper" class="d-flex flex-column">
+            <div id="content">
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+                        <i class="fa fa-bars"></i>
+                    </button>
+
+                    <form class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
+                        <div class="input-group">
+                            <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..." aria-label="Search" aria-describedby="basic-addon2">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" type="button">
+                                    <i class="fas fa-search fa-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <ul class="navbar-nav ml-auto">
+                        <li class="nav-item dropdown no-arrow d-sm-none">
+                            <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-search fa-fw"></i>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in" aria-labelledby="searchDropdown">
+                                <form class="form-inline mr-auto w-100 navbar-search">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..." aria-label="Search" aria-describedby="basic-addon2">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-primary" type="button">
+                                                <i class="fas fa-search fa-sm"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </li>
+
+                        <li class="nav-item dropdown no-arrow mx-1">
+                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown"
+                               aria-haspopup="true" :aria-expanded="show_alert" @click.stop="show_alert=!show_alert">
+                                <i class="fas fa-bell fa-fw"></i>
+                                <span class="badge badge-danger badge-counter">3+</span>
+                            </a>
+                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                                 aria-labelledby="alertsDropdown" :class="{show:show_alert}">
+                                <h6 class="dropdown-header">
+                                    Alerts Center
+                                </h6>
+                                <a class="dropdown-item d-flex align-items-center" href="#">
+                                    <div class="mr-3">
+                                        <div class="icon-circle bg-primary">
+                                            <i class="fas fa-file-alt text-white"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="small text-gray-500">December 12, 2019</div>
+                                        <span class="font-weight-bold">A new monthly report is ready to download!</span>
+                                    </div>
+                                </a>
+                                <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
+                            </div>
+                        </li>
+                        <div class="topbar-divider d-none d-sm-block"></div>
+                        <li class="nav-item dropdown no-arrow">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
+                               aria-haspopup="true" :aria-expanded="show_setting" @click.stop="show_setting=!show_setting">
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Test User</span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown"
+                                 :class="{show:show_setting}">
+                                <a class="dropdown-item" href="#">
+                                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    帐号信息（不可用）
+                                </a>
+                                <a class="dropdown-item" href="#">
+                                    <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    设置（不可用）
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    登出
+                                </a>
+                            </div>
+                        </li>
+                    </ul>
+                </nav>
+                <div id="main_content">
+                    <transition>
+                        <router-view></router-view>
+                    </transition>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script src="../static/vendor/jquery/jquery.min.js"></script>
+<script src="../static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="../static/vendor/vue/vue.min.js"></script>
+<script src="../static/vendor/vue/vue-router.min.js"></script>
+<script src="../static/vendor/element-ui/lib/index.js"></script>
+<script src="../static/vendor/axios/axios.js"></script>
+<script src="../static/js/femts.min.js"></script>
+<script src="../static/js/admin.js"></script>
+<script>
+
+    let router = new VueRouter({
+        routes: [
+            {path: '/', component: Home},
+            {path: '/doc-info', component: DocInfo},
+            {path: '/doc-record', component: DocRecord},
+            {path: '/doc-trace', component: DocTrace},
+            {path: '/user-info', component: UserInfo},
+            {path: '/user-record', component: UserRecord},
+        ]
+    });
+
+    let $app = new Vue({
+        el: '#app',
+        data () {
+            return {
+                show_alert: false,
+                show_setting: false,
+            }
+        },
+        methods: {
+            close_all () {
+                this.$data.show_alert = false;
+                this.$data.show_setting = false;
+            },
+            collapseSidebar () {
+                let $sidebar = $(".sidebar");
+                $("body").toggleClass("sidebar-toggled");
+                $sidebar.toggleClass("toggled");
+                if ($sidebar.hasClass("toggled")) {
+                    $('.sidebar .collapse').collapse('hide');
+                }
+            }
+        },
+        router: router
+    });
+</script>
+</html>

@@ -55,4 +55,16 @@ public interface UserService {
      * @return 返回更新后的用户信息
      */
     User updateUser(Long userId, User user);
+
+    /**
+     * 统计注册人数
+     * @return 返回当前注册人数
+     */
+    Long countRegistered();
+
+    /**
+     * 统计激活人数
+     * @return 返回当前激活人数
+     */
+    Long countActived();
 }

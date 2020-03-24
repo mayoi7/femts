@@ -16,4 +16,16 @@ public class RedisKeys {
     /** 使用时需要在后面追加个人信息 */
     public static final String PASSWORD_RESET_KEY = "pwd_reset$";
 
+    /** 注册人数 */
+    public static final String REGIST_COUNT_KEY = "registered";
+
+    /** 激活人数 */
+    public static final String ACTIVED_COUNT_KEY = "actived";
+
+    /** 在线人数 */
+    public static final String ONLINE_COUNT_KEY = "online";
+
+    /** 文档总数 */
+    public static final String DOCUMENT_COUNT_KEY = "document";
+
 }

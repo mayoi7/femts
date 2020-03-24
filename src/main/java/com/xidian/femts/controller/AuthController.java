@@ -1,11 +1,13 @@
 package com.xidian.femts.controller;
 
 import com.alibaba.fastjson.JSON;
+import com.xidian.femts.constants.RedisKeys;
 import com.xidian.femts.constants.UserQueryCondition;
 import com.xidian.femts.entity.User;
-import com.xidian.femts.service.impl.EmailService;
 import com.xidian.femts.service.LoginService;
+import com.xidian.femts.service.RedisService;
 import com.xidian.femts.service.UserService;
+import com.xidian.femts.service.impl.EmailService;
 import com.xidian.femts.utils.TokenUtils;
 import com.xidian.femts.vo.ResultVO;
 import lombok.extern.slf4j.Slf4j;
@@ -45,10 +47,13 @@ public class AuthController {
 
     private final EmailService emailService;
 
-    public AuthController(UserService userService, LoginService loginService, EmailService emailService) {
+    private final RedisService redisService;
+
+    public AuthController(UserService userService, LoginService loginService, EmailService emailService, RedisService redisService) {
         this.userService = userService;
         this.loginService = loginService;
         this.emailService = emailService;
+        this.redisService = redisService;
     }
 
     @GetMapping("/intercept")
@@ -118,6 +123,7 @@ public class AuthController {
     public ModelAndView logout() {
         Subject subject = SecurityUtils.getSubject();
         subject.logout();
+
         // 跳转回主页
         return new ModelAndView("redirect:/index");
     }
@@ -159,6 +165,10 @@ public class AuthController {
         // 发激活邮件
         String url = "/api/1.0/auth/active?id=" + user.getId() + "&code=" + generateUserActivationCode(user);
         emailService.sendActiveMail(email, url);
+
+        // 注册人数自增
+        redisService.incrementAndGet(RedisKeys.REGIST_COUNT_KEY);
+
         return ResultVO.SUCCESS;
     }
 
@@ -182,6 +192,9 @@ public class AuthController {
                     "<<users may manually splice the activation url>>", id, code);
             throw new RuntimeException("id不存在，用户可能手动拼接了激活链接");
         }
+
+        // 激活人数自增
+        redisService.incrementAndGet(RedisKeys.ACTIVED_COUNT_KEY);
 
         return new ModelAndView("redirect:/index");
     }

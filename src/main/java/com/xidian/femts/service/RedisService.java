@@ -38,4 +38,33 @@ public interface RedisService {
      * @param key 要删除的缓存的key
      */
     void del(String key);
+
+    /**
+     * 统计计数值
+     * @param key 计数值的key
+     * @return 计数值
+     */
+    Long count(String key);
+
+    /**
+     * 初始化计数器，一般在缓存恢复时使用
+     * @param key 计数值的key
+     * @param initVal 初始值
+     */
+    void initCounter(String key, long initVal);
+
+    /**
+     * 统计计数值并自增（先自增再返回）
+     * @param key 计数值的key
+     * @return 自增后的结果
+     */
+    Long incrementAndGet(String key);
+
+    /**
+     * 统计计数值并自减（先自减再返回）
+     * @param key 计数值的key
+     * @return 自减后的结果
+     */
+    Long decrementAndGet(String key);
+
 }

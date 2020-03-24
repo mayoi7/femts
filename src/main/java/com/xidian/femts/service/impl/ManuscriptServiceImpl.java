@@ -160,4 +160,9 @@ public class ManuscriptServiceImpl implements ManuscriptService {
     public Mark findIdByHash(String hash) {
         return markRepository.findByHash(hash);
     }
+
+    @Override
+    public Long countManuscript() {
+        return manuscriptRepository.count();
+    }
 }
