@@ -17,6 +17,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @RequestMapping("")
 public class BaseController {
 
+    @GetMapping("/")
+    public String redirect() {
+        return "index";
+    }
+
     @GetMapping("index")
     public String index() {
         return "/index";
