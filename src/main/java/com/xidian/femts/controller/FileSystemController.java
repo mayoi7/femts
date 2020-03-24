@@ -1,9 +1,6 @@
 package com.xidian.femts.controller;
 
-import com.xidian.femts.constants.FileType;
-import com.xidian.femts.constants.OptionType;
-import com.xidian.femts.constants.SecurityLevel;
-import com.xidian.femts.constants.UserQueryCondition;
+import com.xidian.femts.constants.*;
 import com.xidian.femts.core.FileSigner;
 import com.xidian.femts.dto.JudgeResult;
 import com.xidian.femts.entity.Manuscript;
@@ -54,13 +51,16 @@ public class FileSystemController {
 
     private final UserService userService;
 
-    public FileSystemController(StorageService storageService, ManuscriptService manuscriptService, UserService userService, InternalCacheService cacheService, HistoryService historyService, DirectoryService directoryService) {
+    private final RedisService redisService;
+
+    public FileSystemController(StorageService storageService, ManuscriptService manuscriptService, UserService userService, InternalCacheService cacheService, HistoryService historyService, DirectoryService directoryService, RedisService redisService) {
         this.storageService = storageService;
         this.manuscriptService = manuscriptService;
         this.userService = userService;
         this.cacheService = cacheService;
         this.historyService = historyService;
         this.directoryService = directoryService;
+        this.redisService = redisService;
     }
 
     /**
@@ -171,7 +171,11 @@ public class FileSystemController {
             log.error("[DIR] directory append failed <parent_id: {}, doc_id: {}>",
                     directoryId, manuscript.getId());
         }
-        // 8. 添加操作记录
+
+        // 8. 文档数自增
+        redisService.incrementAndGet(RedisKeys.DOCUMENT_COUNT_KEY);
+
+        // 9. 添加操作记录
         historyService.addOptionHistory(userId, manuscript.getId(), OptionType.CREATE);
         return new ResultVO(CREATED, manuscript);
     }

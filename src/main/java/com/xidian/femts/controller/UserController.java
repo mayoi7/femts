@@ -5,19 +5,24 @@ import com.xidian.femts.constants.UserQueryCondition;
 import com.xidian.femts.constants.UserState;
 import com.xidian.femts.entity.User;
 import com.xidian.femts.exception.ParamException;
-import com.xidian.femts.service.impl.EmailService;
+import com.xidian.femts.service.ManuscriptService;
 import com.xidian.femts.service.RedisService;
 import com.xidian.femts.service.UserService;
+import com.xidian.femts.service.impl.EmailService;
+import com.xidian.femts.shiro.ShiroSessionListener;
 import com.xidian.femts.utils.TokenUtils;
 import com.xidian.femts.vo.ResultVO;
+import com.xidian.femts.vo.SystemCount;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authz.annotation.RequiresRoles;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpSession;
 
+import static com.xidian.femts.constants.RedisKeys.*;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
@@ -39,10 +44,16 @@ public class UserController {
 
     private final EmailService emailService;
 
-    public UserController(UserService userService, RedisService redisService, EmailService emailService) {
+    private final ManuscriptService manuscriptService;
+
+    private final ShiroSessionListener sessionListener;
+
+    public UserController(UserService userService, RedisService redisService, EmailService emailService, @Lazy ShiroSessionListener sessionListener, ManuscriptService manuscriptService) {
         this.userService = userService;
         this.redisService = redisService;
         this.emailService = emailService;
+        this.sessionListener = sessionListener;
+        this.manuscriptService = manuscriptService;
     }
 
     /**
@@ -199,4 +210,40 @@ public class UserController {
         return new ResultVO(user);
     }
 
+    /**
+     * 统计系统数据，包含注册、激活、在线人数以及文档总数
+     * @return 返回统计结果
+     */
+    @GetMapping("count")
+    public ResultVO countSystemData() {
+        long registered = redisService.count(REGIST_COUNT_KEY);
+        if (registered == 0L) {
+            registered = userService.countRegistered();
+            log.warn("[REDIS] cache lost, reset new value <new_val(registered): {}>", registered);
+            redisService.initCounter(REGIST_COUNT_KEY, registered);
+        }
+
+        long actived = redisService.count(ACTIVED_COUNT_KEY);
+        if (actived == 0L) {
+            actived = userService.countActived();
+            log.warn("[REDIS] cache lost, reset new value <new_val(actived): {}>", actived);
+            redisService.initCounter(ACTIVED_COUNT_KEY, actived);
+        }
+
+        long online = redisService.count(ONLINE_COUNT_KEY);
+        if (online == 0L) {
+            online = sessionListener.getSessionCount();
+            log.warn("[REDIS] cache lost, reset new value <new_val(online): {}>", online);
+            redisService.initCounter(ONLINE_COUNT_KEY, online);
+        }
+
+        long document = redisService.count(DOCUMENT_COUNT_KEY);
+        if (document == 0L) {
+            document = manuscriptService.countManuscript();
+            log.warn("[REDIS] cache lost, reset new value <new_val(document): {}>", document);
+            redisService.initCounter(DOCUMENT_COUNT_KEY, document);
+        }
+
+        return new ResultVO(new SystemCount(registered, actived, online, document));
+    }
 }

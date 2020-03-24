@@ -1,10 +1,7 @@
 package com.xidian.femts.controller;
 
 import com.alibaba.fastjson.JSON;
-import com.xidian.femts.constants.FileType;
-import com.xidian.femts.constants.OptionType;
-import com.xidian.femts.constants.UserQueryCondition;
-import com.xidian.femts.constants.UserState;
+import com.xidian.femts.constants.*;
 import com.xidian.femts.dto.DocumentReq;
 import com.xidian.femts.dto.DocumentResp;
 import com.xidian.femts.entity.Directory;
@@ -47,13 +44,16 @@ public class ManuscriptController {
 
     private final HistoryService historyService;
 
-    public ManuscriptController(ManuscriptService manuscriptService, UserService userService, DirectoryService directoryService, HistoryService historyService, InternalCacheService cacheService, StorageService storageService) {
+    private final RedisService redisService;
+
+    public ManuscriptController(ManuscriptService manuscriptService, UserService userService, DirectoryService directoryService, HistoryService historyService, InternalCacheService cacheService, StorageService storageService, RedisService redisService) {
         this.manuscriptService = manuscriptService;
         this.userService = userService;
         this.directoryService = directoryService;
         this.historyService = historyService;
         this.cacheService = cacheService;
         this.storageService = storageService;
+        this.redisService = redisService;
     }
 
     /**
@@ -166,6 +166,9 @@ public class ManuscriptController {
                     document.getDirectoryId(), manuscript.getId());
             return null;
         }
+        // 文档总数自增
+        redisService.incrementAndGet(RedisKeys.DOCUMENT_COUNT_KEY);
+
         historyService.addOptionHistory(creatorId, manuscript.getId(), OptionType.CREATE);
         return manuscript;
     }
@@ -229,6 +232,9 @@ public class ManuscriptController {
                 user.getState().getCode() >= UserState.ADMIN.getCode()) {
             // 只有当前用户是文档创建者或管理员时，才可以删除该文档
             directoryService.deleteManuscript(id, manuscript.getDirectoryId());
+
+            // 文档数自减
+            redisService.decrementAndGet(RedisKeys.DOCUMENT_COUNT_KEY);
             return ResultVO.SUCCESS;
         } else {
             log.error("[DOC] user unauthorized delete document <user: {}>", user);

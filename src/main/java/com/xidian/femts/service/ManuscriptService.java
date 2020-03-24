@@ -88,4 +88,10 @@ public interface ManuscriptService {
      * @return 如果为空，说明查不到数据；如果不为空，则返回的是数据表中的数据
      */
     Mark findIdByHash(String hash);
+
+    /**
+     * 统计文档个数
+     * @return 返回数据库中现存文档总数（会包含已删除的文档，所以可能会有误差）
+     */
+    Long countManuscript();
 }

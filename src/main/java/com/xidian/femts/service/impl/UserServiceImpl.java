@@ -116,4 +116,14 @@ public class UserServiceImpl implements UserService {
         }
         return userRepository.save(user);
     }
+
+    @Override
+    public Long countRegistered() {
+        return userRepository.count();
+    }
+
+    @Override
+    public Long countActived() {
+        return userRepository.countActivedUser();
+    }
 }
