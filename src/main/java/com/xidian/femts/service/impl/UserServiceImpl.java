@@ -32,6 +32,22 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public boolean findDuplicateField(String field, UserQueryCondition condition) {
+        switch (condition) {
+            case USERNAME:
+                return userRepository.findDuplicateUsername(field) != null;
+            case PHONE:
+                return userRepository.findDuplicatePhone(field) != null;
+            case JOBID:
+                return userRepository.findByJobId(field) != null;
+            case EMAIL:
+                return userRepository.findDuplicateEmail(field) != null;
+            default:
+                return false;
+        }
+    }
+
+    @Override
     @Cacheable(cacheNames = "username", key = "#userId")
     public String findUsernameById(Long userId) {
         return userRepository.findUsernameById(userId);
@@ -102,7 +118,7 @@ public class UserServiceImpl implements UserService {
         // 避免恶意修改时间信息
         user.setCreatedAt(null);
         user.setModifiedAt(null);
-        return userRepository.save(user);
+        return userRepository.saveAndFlush(user);
     }
 
     @Override
@@ -110,11 +126,7 @@ public class UserServiceImpl implements UserService {
     @CachePut(cacheNames = "user", key = "#user.username + '$USERNAME'")
     public User updateUser(Long userId, User user) {
         // jpa的save会自动触发查询userId是否存在，所以不要做额外的检查操作
-        if (user == null || user.getId() == null) {
-            log.warn("[USER] reject update null data <<maybe user is null or user_id is null>>");
-            return null;
-        }
-        return userRepository.save(user);
+        return userRepository.saveAndFlush(user);
     }
 
     @Override

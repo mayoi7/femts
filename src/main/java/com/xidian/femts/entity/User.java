@@ -9,6 +9,8 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.Pattern;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -37,9 +39,10 @@ public class User implements Serializable {
 	private Long id;
 
 	/**
-	 * 用户名，可以为中文（建议为员工名称+编号的形式）
+	 * 用户名，为员工名称+编号的形式
 	 */
    	@Column(name = "username" )
+	@Pattern(regexp = "^[\\u4e00-\\u9fa5]{2,6}\\d{1,3}$")
 	private String username;
 
    	@Column(name = "password" )
@@ -52,9 +55,11 @@ public class User implements Serializable {
 	private Long jobId;
 
    	@Column(name = "email" )
+	@Email(regexp = "^(\\w-*\\.*)+@(\\w-?)+(\\.\\w{2,})+$")
 	private String email;
 
    	@Column(name = "phone" )
+	@Pattern(regexp = "^1[3456789]\\d{9}$")
 	private String phone;
 
 	/**

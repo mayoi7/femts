@@ -19,6 +19,14 @@ public interface UserService {
     Long findIdByUsername(String username);
 
     /**
+     * 查询某一字段是否与数据库中其他用户数据重复。因为该方法调用情况较少，所以不置入缓存
+     * @param field 待查询的字段
+     * @param condition 查询条件（字段类型）
+     * @return true：数据重复
+     */
+    boolean findDuplicateField(String field, UserQueryCondition condition);
+
+    /**
      * 根据用户id查询用户名
      * @param userId 用户id
      * @return 用户的用户名，如果不存在则返回null

@@ -23,6 +23,7 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpSession;
 
 import static com.xidian.femts.constants.RedisKeys.*;
+import static com.xidian.femts.constants.UserQueryCondition.*;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 
@@ -74,7 +75,7 @@ public class UserController {
      */
     @GetMapping("/defection/{username}")
     public ResultVO defectUsername(@PathVariable("username") String username) {
-        User user = userService.findByCondition(username, UserQueryCondition.USERNAME);
+        User user = userService.findByCondition(username, USERNAME);
         if (user != null) {
             return new ResultVO(HttpStatus.BAD_REQUEST, "用户名已存在");
         } else {
@@ -145,7 +146,7 @@ public class UserController {
         }
         String encrypted = TokenUtils.encryptPassword(password, username);
         // 不用非空判断，因为如果缓存中有数据，说明用户名是可用的
-        User user = userService.findByCondition(username, UserQueryCondition.USERNAME);
+        User user = userService.findByCondition(username, USERNAME);
         user.setPassword(encrypted);
         if (userService.updateUser(user.getId(), user) == null) {
             log.error("[USER] user updated failed <user: {}>", user);
@@ -156,56 +157,92 @@ public class UserController {
     }
 
     /**
-     * 修改用户状态，包含赋权以及锁定功能
-     * @param userId 用户id
-     * @param state 更新后的用户状态
-     * @return 返回成功与否的提示信息
+     * 更新用户信息
+     * @param userId 被更新的用户id
+     * @param user 用户数据
+     * @return 更新后的用户信息
      */
-    @PostMapping("/state/{userId}")
-    @RequiresRoles("sp_admin")
-    public ResultVO modifyUserState(@PathVariable Long userId, @RequestBody UserState state) {
-        if (state == UserState.SUPER_ADMIN) {
-            // 获取当前登陆用户信息及ip
+    @PostMapping("{userId}")
+    @RequiresRoles("admin")
+    public ResultVO updateUserInfo(@PathVariable Long userId, @RequestBody User user,
+                                   @RequestParam(value = "needCheck", defaultValue = "true") boolean needCheck) {
+        if (user.getState().getCode() >= UserState.ADMIN.getCode()) {
+            // 如果用户通过该接口赋予管理员权限，则直接记录信息并阻止
             String authorizer = TokenUtils.getLoggedUserInfo();
             String ip = TokenUtils.getLoggedUserInfo();
             log.error("[USER] user try to authorize super admin, blocked " +
                     "<authorizer_name: {}, authorizer_ip: {}, authorized_id: {}>", authorizer, ip, userId);
-            return new ResultVO(BAD_REQUEST, "禁止授权超级管理员");
+            return new ResultVO(BAD_REQUEST, "禁止通过该方式授权管理员");
         }
-        User user = userService.findByCondition(userId.toString(), UserQueryCondition.ID);
-        if (user == null) {
-            log.error("[USER] user id is not existed <user_id: {}>", userId);
-            return new ResultVO(BAD_REQUEST, "用户id不存在");
+        if (needCheck) {
+            // 如果不手动指定，则默认进行参数检验
+            User oldData = userService.findByCondition(userId.toString(), ID);
+            String errorMsg = checkUserParam(oldData, user);
+            if (errorMsg != null) {
+                return new ResultVO(BAD_REQUEST, errorMsg);
+            }
         }
-        if (user.getState() == state) {
-            return new ResultVO("重复更改");
-        }
-        user.setState(state);
-        user = userService.saveUser(user);
-        return new ResultVO(user);
+
+        user.setPassword(null);
+        user.setId(userId);
+
+        User updated = userService.updateUser(userId, user);
+        return new ResultVO(updated);
     }
 
     /**
-     * 给用户授权超级管理员<br/>
+     * 校验用户参数（只校验数据是否重复，不校验合法性），判断是否可以进行更新
+     * @param oldData 数据库中的旧数据
+     * @param newData 待覆盖旧数据的新数据
+     * @return 如果返回值为空，说明可以更新，否则会返回出错提示语句
+     */
+    private String checkUserParam(User oldData, User newData) {
+        // 只要有数据不等，说明字段被更新，需要查询数据库检查数据是否重复
+        if (!oldData.getUsername().equals(newData.getUsername())) {
+            if (userService.findDuplicateField(newData.getUsername(), USERNAME)) {
+                return "用户名已存在";
+            }
+        }
+        if (!oldData.getJobId().equals(newData.getJobId())) {
+            if (userService.findDuplicateField(newData.getJobId().toString(), JOBID)) {
+                return "工号已存在";
+            }
+        }
+        if (!oldData.getEmail().equals(newData.getEmail())) {
+            if (userService.findDuplicateField(newData.getEmail(), EMAIL)) {
+                return "邮箱已存在";
+            }
+        }
+        if (!oldData.getPhone().equals(newData.getPhone())) {
+            if (userService.findDuplicateField(newData.getPhone(), PHONE)) {
+                return "手机号已存在";
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 给用户授权管理员/超级管理员权限<br/>
      * 开发者接口，所有访问该接口的用户，个人信息都会被强制记录
      * @param userId 被授权用户id
      * @return 返回被授权用户信息
      */
     @PostMapping("/authorize/superadmin/{userId}")
     @RequiresRoles("sp_admin")
-    public ResultVO authorizeSuperAdmin(@PathVariable Long userId) {
-        // 获取当前登陆用户信息及ip
+    public ResultVO authorizeSuperAdmin(@PathVariable Long userId,
+                                        @RequestParam(value = "state", defaultValue = "ADMIN") UserState state) {
+        // 记录操作人信息
         String authorizer = TokenUtils.getLoggedUserInfo();
         String ip = TokenUtils.getLoggedUserInfo();
         log.warn("[USER] user try to authorize super admin " +
                 "<authorizer_name: {}, authorizer_ip: {}, authorized_id: {}>", authorizer, ip, userId);
 
-        User user = userService.findByCondition(userId.toString(), UserQueryCondition.ID);
+        User user = userService.findByCondition(userId.toString(), ID);
         if (user == null) {
             log.error("[USER] user id is not existed <user_id: {}>", userId);
             return new ResultVO(BAD_REQUEST, "用户id不存在");
         }
-        user.setState(UserState.SUPER_ADMIN);
+        user.setState(state);
         user = userService.saveUser(user);
         return new ResultVO(user);
     }

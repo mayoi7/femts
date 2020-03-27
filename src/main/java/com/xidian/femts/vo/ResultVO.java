@@ -22,9 +22,9 @@ public class ResultVO {
     private Integer code;
 
     /**
-     * 响应体（Json字符串格式）
+     * 响应体
      */
-    private String data;
+    private Object data;
 
     public ResultVO() {
         this.code = HttpStatus.OK.value();
@@ -42,13 +42,9 @@ public class ResultVO {
     public ResultVO(Object obj) {
         if(obj == null) {
             this.code = HttpStatus.SERVICE_UNAVAILABLE.value();
-            return;
-        }
-        this.code = HttpStatus.OK.value();
-        if (obj instanceof String) {
-            this.data = (String) obj;
         } else {
-            this.data = JSON.toJSONString(obj);
+            this.code = HttpStatus.OK.value();
+            this.data = obj;
         }
     }
 }
