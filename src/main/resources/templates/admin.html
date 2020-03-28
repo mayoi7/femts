@@ -23,6 +23,15 @@
             padding-left: 35px;
             padding-right: 35px;
         }
+
+        #main_content .user-info .el-card {
+            width: 50rem;
+            margin: 15px auto;
+        }
+
+        #main_content form.el-form input[disabled] {
+            color: #0000007a;
+        }
     </style>
 </head>
 <body>
@@ -203,7 +212,6 @@
 <script src="../static/js/femts.min.js"></script>
 <script src="../static/js/admin.js"></script>
 <script>
-
     let router = new VueRouter({
         routes: [
             {path: '/', component: Home},
