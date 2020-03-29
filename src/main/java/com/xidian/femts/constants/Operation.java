@@ -12,12 +12,13 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum OptionType implements CodeEnum {
+public enum Operation implements CodeEnum {
     CREATE("创建文档", 0),
     UPDATE("更新文档", 1),
     DELETE("删除文档", 2),
     DOWNLOAD("下载文档", 3),
-    UPLOAD("上传文档", 4);
+    UPLOAD("上传文档", 4),
+    MODIFY_USER("修改用户信息", 5);
 
     private String name;
 

@@ -176,7 +176,7 @@ public class FileSystemController {
         redisService.incrementAndGet(RedisKeys.DOCUMENT_COUNT_KEY);
 
         // 9. 添加操作记录
-        historyService.addOptionHistory(userId, manuscript.getId(), OptionType.CREATE);
+        historyService.addOptionHistory(userId, manuscript.getId(),true, Operation.CREATE);
         return new ResultVO(CREATED, manuscript);
     }
 

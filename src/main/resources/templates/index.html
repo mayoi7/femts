@@ -338,7 +338,7 @@
 <script src="../static/vendor/axios/axios.js"></script>
 <script src="../static/js/femts.min.js"></script>
 <script>
-    const HOST = 'https://www.fastmock.site/mock/b643231b81d6851b3bf8fe14314271d4/femts';
+    const HOST = 'https://www.fastmock.site/mock/b643231b81d6851b3bf8fe14314271d4/femts/api/1.0';
     let wait_time = 10;
     // 编辑器配置
     const options = {
@@ -506,7 +506,7 @@
                     level: SECURITY_LEVEL[this.$data.setting_select]
                 };
 
-                axios.post(HOST + "/api/1.0/doc/:id", document)
+                axios.post(HOST + "/doc/:id", document)
                     .then(res => {
                         console.log(res.data);
                         loader.save_btn = false;

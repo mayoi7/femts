@@ -1,6 +1,6 @@
 package com.xidian.femts.service;
 
-import com.xidian.femts.entity.History;
+import com.xidian.femts.vo.OperationHistory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,12 +23,7 @@ public class HistoryServiceTest {
 
     @Test
     public void queryRecords() {
-        List<History> histories = historyService.queryUserHistoriesByUserId(2L);
-        System.out.println("size1:" + histories.size());
-        histories = historyService.queryUserHistoriesByUserId(2L);
-        System.out.println("size2: " + histories.size());
-        histories.forEach(item -> {
-            System.out.println(item.toString());
-        });
+        List<OperationHistory> operations = historyService.queryOperatorHistories(4L,0);
+        int a = 1;
     }
 }
