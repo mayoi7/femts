@@ -46,7 +46,7 @@ public class History implements Serializable {
 	private Date time;
 
 	/**
-	 * 0：创建；1：更新；2：删除；3：下载；4：上传
+	 * 0：创建；1：更新；2：删除；3：下载；4：上传；5：修改用户信息
 	 */
    	@Column(name = "option_type" )
 	private OptionType optionType;
@@ -54,8 +54,12 @@ public class History implements Serializable {
 	/**
 	 * 操作对象id（即文档id）
 	 */
-   	@Column(name = "object_id" )
+	@Column(name = "object_id" )
 	private Long objectId;
+
+   	/** 备注信息，当OptionType为5时表示修改前后的数据差别 */
+   	@Column(name = "note")
+	private String note;
 
 	@Override
 	public String toString() {
@@ -65,6 +69,7 @@ public class History implements Serializable {
 					"time='" + time + '\'' +
 					"optionType='" + optionType + '\'' +
 					"optionId='" + objectId + '\'' +
+					"note='" + note + '\'' +
 				'}';
 	}
 

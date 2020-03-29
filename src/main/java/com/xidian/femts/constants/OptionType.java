@@ -17,7 +17,8 @@ public enum OptionType implements CodeEnum {
     UPDATE("更新文档", 1),
     DELETE("删除文档", 2),
     DOWNLOAD("下载文档", 3),
-    UPLOAD("上传文档", 4);
+    UPLOAD("上传文档", 4),
+    MODIFY_USER("修改用户信息", 5);
 
     private String name;
 
