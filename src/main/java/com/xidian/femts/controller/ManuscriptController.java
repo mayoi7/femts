@@ -169,7 +169,7 @@ public class ManuscriptController {
         // 文档总数自增
         redisService.incrementAndGet(RedisKeys.DOCUMENT_COUNT_KEY);
 
-        historyService.addOptionHistory(creatorId, manuscript.getId(), OptionType.CREATE);
+        historyService.addOptionHistory(creatorId, manuscript.getId(),true, Operation.CREATE);
         return manuscript;
     }
 
@@ -208,7 +208,7 @@ public class ManuscriptController {
             storageService.modify(manuscript.getFileId(), bytes, FileType.CUSTOM.getName());
         }
         // 5. 添加操作记录
-        historyService.addOptionHistory(editorId, manuscript.getId(), OptionType.UPDATE);
+        historyService.addOptionHistory(editorId, manuscript.getId(),true, Operation.UPDATE);
         return manuscript;
     }
 

@@ -23,8 +23,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * 根据用户名查询用户名，即查询是否有重复的用户名
      * @return 查询的结果，如果为空说明没有重复数据
      */
-    @Query(value = "select id from user where id = :userId", nativeQuery = true)
-    Long findDuplicateUsername(String param);
+    @Query(value = "select id from user where username = :param", nativeQuery = true)
+    String findDuplicateUsername(String param);
 
     /**
      * 根据工号查询工号，即查询是否有重复的工号

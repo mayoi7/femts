@@ -1,6 +1,6 @@
 package com.xidian.femts.entity;
 
-import com.xidian.femts.constants.OptionType;
+import com.xidian.femts.constants.Operation;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -42,35 +42,27 @@ public class History implements Serializable {
    	@Column(name = "user_id" )
 	private Long userId;
 
-   	@Column(name = "time" )
-	private Date time;
-
 	/**
-	 * 0：创建；1：更新；2：删除；3：下载；4：上传；5：修改用户信息
+	 * 0：创建；1：更新；2：删除；3：下载；4：上传
 	 */
-   	@Column(name = "option_type" )
-	private OptionType optionType;
+   	@Column(name = "operation" )
+	private Operation operation;
+
+   	/** 操作类型，false：用户，true：文档 */
+   	private Boolean type;
 
 	/**
-	 * 操作对象id（即文档id）
+	 * 操作对象id
 	 */
 	@Column(name = "object_id" )
 	private Long objectId;
 
    	/** 备注信息，当OptionType为5时表示修改前后的数据差别 */
-   	@Column(name = "note")
-	private String note;
+   	@Column(name = "remark")
+	private String remark;
 
-	@Override
-	public String toString() {
-		return "{" +
-					"id='" + id + '\'' +
-					"userId='" + userId + '\'' +
-					"time='" + time + '\'' +
-					"optionType='" + optionType + '\'' +
-					"optionId='" + objectId + '\'' +
-					"note='" + note + '\'' +
-				'}';
-	}
+	@Column(name = "time" )
+	private Date time;
+
 
 }

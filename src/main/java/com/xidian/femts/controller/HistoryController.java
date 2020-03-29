@@ -1,25 +1,21 @@
 package com.xidian.femts.controller;
 
-import com.xidian.femts.entity.History;
 import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.entity.User;
 import com.xidian.femts.service.HistoryService;
 import com.xidian.femts.service.InternalCacheService;
 import com.xidian.femts.service.ManuscriptService;
 import com.xidian.femts.service.UserService;
-import com.xidian.femts.vo.HistoryRecord;
+import com.xidian.femts.vo.OperationHistory;
 import com.xidian.femts.vo.ResultVO;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
+import javax.validation.constraints.Min;
 import java.util.List;
 
-import static com.xidian.femts.constants.UserQueryCondition.ID;
+import static com.xidian.femts.constants.UserQueryCondition.USERNAME;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 /**
  * 历史记录（溯源核心）查询控制
@@ -49,65 +45,58 @@ public class HistoryController {
 
     /**
      * 查询用户的操作记录
-     * @param userId 用户id
-     * @return 返回 {@link HistoryRecord} 数组表示所有操作记录，按时间先后排序（首元素时间最近）
+     * @param username 用户名
+     * @return 返回 {@link OperationHistory} 数组表示所有操作记录，按时间先后排序（倒序）
      */
-    @GetMapping("/user/{userId}")
-    public ResultVO findUserHistoriesById(@PathVariable("userId") Long userId) {
-        User user = userService.findByCondition(userId.toString(), ID);
+    @GetMapping("/user/{username}")
+    public ResultVO findUserHistoriesById(@PathVariable("username") String username,
+                                          @RequestParam(value = "pageNum", defaultValue = "1") @Min(1) int pageNum) {
+        User user = userService.findByCondition(username, USERNAME);
         if (user == null) {
-            log.warn("[HISTORY] user id is not existed <user_id: {}>", userId);
-            return new ResultVO(HttpStatus.BAD_REQUEST, "用户id不存在");
+            log.warn("[HISTORY] user id is not existed <username: {}>", username);
+            return new ResultVO(BAD_REQUEST, "用户不存在");
         }
-        List<History> histories = historyService.queryUserHistoriesByUserId(userId);
-        List<HistoryRecord> records = new ArrayList<>(histories.size());
-        if (histories.isEmpty()) {
-            return new ResultVO(records);
-        }
-
-        String username = user.getUsername();
-        // 格式化输出结果
-        histories.forEach(history -> {
-            Manuscript manuscript = cacheService.findById_Manuscript(history.getObjectId());
-            if (manuscript == null) {
-                log.error("[HISTORY] doc id in history table is not existed <doc_id: {}>",
-                        history.getObjectId());
-            } else {
-                records.add(new HistoryRecord(history, username, manuscript.getTitle()));
-            }
-        });
-
-        return new ResultVO(records);
+        List<OperationHistory> histories = historyService.queryOperatorHistories(user.getId(), pageNum);
+        return new ResultVO(histories);
     }
 
     /**
-     * 查询某文档的所有操作记录
-     * @param docId 文档id
-     * @return 返回 {@link HistoryRecord} 数组表示所有操作记录，按时间先后排序（首元素时间最近）
+     * 查询某文档/用户的所有操作记录
+     * @param creator 文档创建人的用户名，
+     *                因为只有创建人和文档名才能唯一确定文档，如果要查询用户的话，则该项可以为空
+     * @param type 查询类型，true：文档；false：用户
+     * @param name 文档名或用户名
+     * @return 返回 {@link OperationHistory} 数组表示所有操作记录，按时间先后排序（倒序）
      */
-    @GetMapping("/doc/{docId}")
-    public ResultVO findDocHistoryById(@PathVariable("docId") Long docId) {
-        Manuscript manuscript = cacheService.findById_Manuscript(docId);
-        if (manuscript == null) {
-            log.warn("[HISTORY] doc id is not existed <doc_id: {}>", docId);
-            return new ResultVO(HttpStatus.BAD_REQUEST, "文档id不存在");
+    @GetMapping("/doc/{creator}")
+    public ResultVO findDocHistoryById(@PathVariable(value = "creator", required = false) String creator,
+                                       @RequestParam(value = "type", defaultValue = "true") boolean type,
+                                       @RequestParam("name") String name,
+                                       @RequestParam(value = "pageNum", defaultValue = "1") @Min(1) int pageNum) {
+        if (!type && creator == null) {
+            return new ResultVO(BAD_REQUEST, "文档缺少创建人，无法唯一确定文档");
         }
-        List<History> histories = historyService.queryDocHistoriesByObjectId(docId);
-        List<HistoryRecord> records = new ArrayList<>(histories.size());
-        if (histories.isEmpty()) {
-            return new ResultVO(records);
+        User user = userService.findByCondition(creator, USERNAME);
+        if (user == null) {
+            log.error("[HISTORY] file creator is not found <creator_name: {}>", creator);
+            return new ResultVO(BAD_REQUEST, "用户不存在");
+        }
+        Long objectId;
+        if (type) {
+            // 如果查询的是文档对象
+            Manuscript manuscript = manuscriptService.findByTitle(user.getId(), name);
+            objectId = manuscript.getId();
+        } else {
+            objectId = userService.findIdByUsername(name);
+        }
+        if (objectId == null) {
+            log.error("[HISTORY] can not find the data corresponding to id <type: {}, name: {}>",
+                    type, name);
+            return new ResultVO(BAD_REQUEST, "查询不到参数对应的数据");
         }
 
-        String title = manuscript.getTitle();
-        histories.forEach(history -> {
-            User user = userService.findByCondition(history.getUserId().toString(), ID);
-            if (user == null) {
-                log.error("[HISTORY] user id in history table is not existed <user_id: {}>",
-                        history.getUserId());
-            } else {
-                records.add(new HistoryRecord(history, user.getUsername(), title));
-            }
-        });
-        return new ResultVO(records);
+        List<OperationHistory> histories = historyService.queryOperatedObjHistories(type, objectId, pageNum);
+
+        return new ResultVO(histories);
     }
 }

@@ -12,7 +12,7 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum OptionType implements CodeEnum {
+public enum Operation implements CodeEnum {
     CREATE("创建文档", 0),
     UPDATE("更新文档", 1),
     DELETE("删除文档", 2),

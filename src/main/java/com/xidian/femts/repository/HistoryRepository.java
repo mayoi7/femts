@@ -1,11 +1,11 @@
 package com.xidian.femts.repository;
 
 import com.xidian.femts.entity.History;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
 
 /**
  * @author LiuHaonan
@@ -23,20 +23,22 @@ public interface HistoryRepository extends JpaRepository<History, Long> {
     History findHistoryById(Long id);
 
     /**
-     * 查询某用户下的操作记录
-     * @param userId 用户id
+     * 分页查询某用户下的操作记录（结果按时间倒序排列）
+     * @param userId 操作者用户id
+     * @param pageable 分页参数
      * @return 操作记录对象列表
      */
-    @Query(value = "select h.id, h.user_id, h.time, h.option_type, h.option_id " +
-            "from history h where h.user_id = :userId order by h.id", nativeQuery = true)
-    List<History> findHistoriesByUserId(Long userId);
+    @Query(value = "select * from history where user_id = :userId order by id desc", nativeQuery = true)
+    Page<History> listHistoriesByUserIdInPage(Long userId, Pageable pageable);
 
     /**
-     * 查询某用户下的操作记录
-     * @param optionId 操作对象id
+     * 分页查询被操作对象（可以是用户或文档，根据type来指定）的记录
+     * @param type 操作对象类型，0：用户；1：文档
+     * @param objectId 操作对象id
+     * @param pageable 分页参数
      * @return 操作记录对象列表
      */
-    @Query(value = "select h.id, h.user_id, h.time, h.option_type, h.option_id " +
-            "from history h where h.option_id = :optionId order by h.id", nativeQuery = true)
-    List<History> findHistoriesByOptionId(Long optionId);
+    @Query(value = "select * from history where object_id = :objectId and type = :type order by id desc", nativeQuery = true)
+    Page<History> listHistoriesByObjectIdAndTypeInPage(boolean type, Long objectId, Pageable pageable);
+
 }

@@ -1,7 +1,6 @@
 package com.xidian.femts.repository;
 
 import com.alibaba.fastjson.JSON;
-import com.xidian.femts.constants.OptionType;
 import com.xidian.femts.entity.History;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,11 +30,11 @@ public class HistoryRepositoryTest {
     @Test
     @Rollback(value = true)
     public void saveRecord() {
-        History history = new History();
-        history.setObjectId(1L);
-        history.setOptionType(OptionType.UPDATE);
-        history.setUserId(2L);
-        History saved = historyRepository.save(history);
-        System.out.println(saved.toString());
+//        History history = new History();
+//        history.setObjectId(1L);
+//        history.setOptionType(Operation.UPDATE);
+//        history.setUserId(2L);
+//        History saved = historyRepository.save(history);
+//        System.out.println(saved.toString());
     }
 }
