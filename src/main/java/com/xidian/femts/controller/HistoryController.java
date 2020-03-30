@@ -1,17 +1,22 @@
 package com.xidian.femts.controller;
 
+import com.xidian.femts.entity.History;
 import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.entity.User;
 import com.xidian.femts.service.HistoryService;
 import com.xidian.femts.service.InternalCacheService;
 import com.xidian.femts.service.ManuscriptService;
 import com.xidian.femts.service.UserService;
+import com.xidian.femts.utils.TokenUtils;
 import com.xidian.femts.vo.OperationHistory;
+import com.xidian.femts.vo.PageableResultVO;
 import com.xidian.femts.vo.ResultVO;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.Min;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.xidian.femts.constants.UserQueryCondition.USERNAME;
@@ -49,15 +54,32 @@ public class HistoryController {
      * @return 返回 {@link OperationHistory} 数组表示所有操作记录，按时间先后排序（倒序）
      */
     @GetMapping("/user/{username}")
-    public ResultVO findUserHistoriesById(@PathVariable("username") String username,
+    public ResultVO findUserHistoriesById(@PathVariable(value = "username", required = false) String username,
                                           @RequestParam(value = "pageNum", defaultValue = "1") @Min(1) int pageNum) {
+        if (username == null) {
+            // 如果没有传入用户名参数，默认查询当前登陆用户
+            username = TokenUtils.getLoggedUserInfo();
+        }
         User user = userService.findByCondition(username, USERNAME);
         if (user == null) {
             log.warn("[HISTORY] user id is not existed <username: {}>", username);
             return new ResultVO(BAD_REQUEST, "用户不存在");
         }
-        List<OperationHistory> histories = historyService.queryOperatorHistories(user.getId(), pageNum);
-        return new ResultVO(histories);
+        Page<History> histories = historyService.queryOperatorHistories(user.getId(), pageNum);
+        List<OperationHistory> records = new ArrayList<>(histories.getSize());
+        histories.get().forEach(item -> {
+            String name;
+            if (item.getType()) {
+                // type为true表示操作对象为文档
+                name = manuscriptService.findTitleById(item.getObjectId());
+            } else {
+                // 否则表示操作对象为用户
+                name = userService.findUsernameById(item.getObjectId());
+            }
+            records.add(new OperationHistory(item, name));
+        });
+
+        return new PageableResultVO(records, histories.getTotalPages());
     }
 
     /**
@@ -95,8 +117,12 @@ public class HistoryController {
             return new ResultVO(BAD_REQUEST, "查询不到参数对应的数据");
         }
 
-        List<OperationHistory> histories = historyService.queryOperatedObjHistories(type, objectId, pageNum);
-
-        return new ResultVO(histories);
+        Page<History> histories = historyService.queryOperatedObjHistories(type, objectId, pageNum);
+        List<OperationHistory> records = new ArrayList<>(histories.getSize());
+        histories.get().forEach(item -> {
+            String tempName = userService.findUsernameById(item.getUserId());
+            records.add(new OperationHistory(item, tempName));
+        });
+        return new PageableResultVO(records, histories.getTotalPages());
     }
 }
