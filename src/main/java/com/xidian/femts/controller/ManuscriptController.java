@@ -89,6 +89,13 @@ public class ManuscriptController {
         // 先获取当前登陆的用户，即操作人
         String username = TokenUtils.getLoggedUserInfo();
         User operator = userService.findByCondition(username, USERNAME);
+
+        Manuscript result = manuscriptService.findByTitle(operator.getId(), document.getTitle());
+        if (result != null) {
+            // 如果重名，则禁止创建或修改
+            return new ResultVO(BAD_REQUEST, "已经创建过同名文档，禁止更新/创建");
+        }
+
         Long operatorId = operator.getId();
 
         if (id == null) {
