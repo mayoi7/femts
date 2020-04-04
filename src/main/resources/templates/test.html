@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="vendor/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="vendor/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="css/femts.min.css">
+    <link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+<div id="app">
+    <el-upload
+            class="upload-demo" drag action=""
+            :on-change="handleChange"
+            :http-request="uploadIt">
+        <i class="el-icon-upload"></i>
+        <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+        <div class="el-upload__tip" slot="tip">只能上传doc/docx/pdf/ofd/rtf/txt文件，且大小不超过2mb</div>
+    </el-upload>
+</div>
+</body>
+<script src="vendor/jquery/jquery.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/vue/vue.min.js"></script>
+<script src="vendor/vue/vue-router.min.js"></script>
+<script src="vendor/element-ui/lib/index.js"></script>
+<script src="vendor/axios/axios.js"></script>
+<script>
+    var $app = new Vue({
+        el: '#app',
+        data: {
+            file: {}
+        },
+        methods: {
+            handleChange(file) {
+                this.$data.file = file.raw;
+            },
+            uploadIt(param) {
+                console.log(param);
+                let form = new FormData();
+                form.append('mulFile', this.$data.file);
+                axios.post('/test/upload', form)
+                    .then(res => {
+                        console.log(res);
+                    }).catch(err => {
+                        this.$message.error(err);
+                });
+            }
+        }
+    });
+</script>
+</html>

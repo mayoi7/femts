@@ -28,8 +28,9 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
  * @date 19:54 2020/2/16
  * @email acerola.orion@foxmail.com
  */
-@RequestMapping("/history")
+@RequestMapping("/api/1.0/history")
 @RestController
+//@RequiresRoles("admin")
 @Slf4j
 public class HistoryController {
 
@@ -83,41 +84,19 @@ public class HistoryController {
     }
 
     /**
-     * 查询某文档/用户的所有操作记录
-     * @param creator 文档创建人的用户名，
-     *                因为只有创建人和文档名才能唯一确定文档，如果要查询用户的话，则该项可以为空
-     * @param type 查询类型，true：文档；false：用户
-     * @param name 文档名或用户名
+     * 查询某文档的所有操作记录
+     * @param id 文档id
      * @return 返回 {@link OperationHistory} 数组表示所有操作记录，按时间先后排序（倒序）
      */
-    @GetMapping("/doc/{creator}")
-    public ResultVO findDocHistoryById(@PathVariable(value = "creator", required = false) String creator,
-                                       @RequestParam(value = "type", defaultValue = "true") boolean type,
-                                       @RequestParam("name") String name,
+    @GetMapping("/doc/{id}")
+    public ResultVO findDocHistoryById(@PathVariable("id") Long id,
                                        @RequestParam(value = "pageNum", defaultValue = "1") @Min(1) int pageNum) {
-        if (!type && creator == null) {
-            return new ResultVO(BAD_REQUEST, "文档缺少创建人，无法唯一确定文档");
+        Manuscript manuscript = cacheService.findById_Manuscript(id);
+        if (manuscript == null) {
+            log.error("[HISTORY] doc with such id is not found <id: {}>", id);
+            return new ResultVO(BAD_REQUEST, "文档不存在");
         }
-        User user = userService.findByCondition(creator, USERNAME);
-        if (user == null) {
-            log.error("[HISTORY] file creator is not found <creator_name: {}>", creator);
-            return new ResultVO(BAD_REQUEST, "用户不存在");
-        }
-        Long objectId;
-        if (type) {
-            // 如果查询的是文档对象
-            Manuscript manuscript = manuscriptService.findByTitle(user.getId(), name);
-            objectId = manuscript.getId();
-        } else {
-            objectId = userService.findIdByUsername(name);
-        }
-        if (objectId == null) {
-            log.error("[HISTORY] can not find the data corresponding to id <type: {}, name: {}>",
-                    type, name);
-            return new ResultVO(BAD_REQUEST, "查询不到参数对应的数据");
-        }
-
-        Page<History> histories = historyService.queryOperatedObjHistories(type, objectId, pageNum);
+        Page<History> histories = historyService.queryOperatedObjHistories(true, id, pageNum - 1);
         List<OperationHistory> records = new ArrayList<>(histories.getSize());
         histories.get().forEach(item -> {
             String tempName = userService.findUsernameById(item.getUserId());

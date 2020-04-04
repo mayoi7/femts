@@ -1,13 +1,10 @@
 package com.xidian.femts.service;
 
-import com.xidian.femts.vo.OperationHistory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import java.util.List;
 
 /**
  * @author LiuHaonan
@@ -23,7 +20,7 @@ public class HistoryServiceTest {
 
     @Test
     public void queryRecords() {
-        List<OperationHistory> operations = historyService.queryOperatorHistories(4L,0);
+//        List<OperationHistory> operations = historyService.queryOperatorHistories(4L,0);
         int a = 1;
     }
 }

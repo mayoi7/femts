@@ -34,6 +34,14 @@ public interface ManuscriptService {
     String findTitleById(Long id);
 
     /**
+     * 根据文件中的标识符来查询文件id
+     * @param file 文件数据对象
+     * @param fileType 文件格式
+     * @return 返回查询到的文档id，如果不存在则返回null
+     */
+    Long findIdByFile(File file, FileType fileType);
+
+    /**
      * 检查文件是否被上传过，如果没有被上传，则向文件中种标识符
      * @param file 文件数据
      * @param bytes 字节数据

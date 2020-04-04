@@ -21,13 +21,13 @@ import lombok.Getter;
 public enum SecurityLevel implements CodeEnum {
 
     /** 只有创建者本人可以读写 */
-    PRIVATE("仅自己可见", 0),
+    PRIVATE("私人", 0),
     /** 所有人可读，但仅自己可写*/
     UNEDITABLE("不可编辑", 1),
     /** 仅上级和自己可以读写 */
     CONFIDENTIAL("仅上级可见", 2),
     /** 任何人均可读写 */
-    PUBLIC("所有人可见", 3);
+    PUBLIC("公开", 3);
 
     private String name;
 

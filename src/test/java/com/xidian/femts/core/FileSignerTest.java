@@ -45,8 +45,8 @@ class FileSignerTest {
     @Test
     void testGetHashFromZipFile() {
         signer.init();
-        String hash = signer.extractHashCodeFromZipFile("file/temp/005.docx");
-        System.out.println("hash=" + hash);
+//        String hash = signer.extractHashCodeFromZipFile("file/temp/005.docx");
+//        System.out.println("hash=" + hash);
     }
 
     @Test

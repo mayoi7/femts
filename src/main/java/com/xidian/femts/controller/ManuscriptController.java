@@ -10,9 +10,11 @@ import com.xidian.femts.entity.User;
 import com.xidian.femts.service.*;
 import com.xidian.femts.utils.TokenUtils;
 import com.xidian.femts.vo.DirectoryElement;
+import com.xidian.femts.vo.DocumentInfo;
 import com.xidian.femts.vo.ReadWritePermission;
 import com.xidian.femts.vo.ResultVO;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -247,6 +249,43 @@ public class ManuscriptController {
             log.error("[DOC] user unauthorized delete document <user: {}>", user);
             return new ResultVO(BAD_REQUEST, "无权删除");
         }
+    }
+
+    /**
+     * 根据文档标题（和创建者用户名）查询对应的文档内容
+     * @param title 文档标题
+     * @param creator 文档创建者用户名
+     * @param id 文档id，如果该参数为空，则使用title和creator进行查询，否则直接使用文档id进行查询;
+     *           如果该项参数不为空，则会忽略title和creator参数，仅使用id进行查找
+     * @return 返回查询到的文档信息
+     */
+    @GetMapping("/info/name")
+    @RequiresRoles("admin")
+    public ResultVO findDocumentInfoWithTitle(@RequestParam("title") String title,
+                                              @RequestParam("creator") String creator,
+                                              @RequestParam(value = "id", required = false) Long id) {
+        Manuscript manuscript;
+        if (id != null) {
+            manuscript = cacheService.findById_Manuscript(id);
+            // id查询的优先值高于title查询
+            creator = userService.findUsernameById(manuscript.getCreatedBy());
+        } else {
+            Long creatorId = userService.findIdByUsername(creator);
+            if (creatorId == null) {
+                log.error("[DOC] doc creator name is not found <creator: {}>", creator);
+                // 大概率是用户自行拼接参数错误，所以不返回500异常
+                return new ResultVO(BAD_REQUEST, "文档创建者不存在");
+            }
+            manuscript = manuscriptService.findByTitle(creatorId, title);
+        }
+        if (manuscript == null) {
+            log.error("[DOC] doc with such title and creator is not found <id: {}, title: {}, creator: {}>",
+                    id, title, creator);
+            return new ResultVO(BAD_REQUEST, "该用户未创建过此标题的文档");
+        }
+        String content = cacheService.findContentById_Content(manuscript.getContentId());
+        String editor = userService.findUsernameById(manuscript.getModifiedBy());
+        return new ResultVO(new DocumentInfo(manuscript, content, creator, editor));
     }
 
     /**

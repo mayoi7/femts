@@ -64,6 +64,23 @@ public class ManuscriptServiceImpl implements ManuscriptService {
     }
 
     @Override
+    public Long findIdByFile(File file, FileType fileType) {
+        if (file == null) {
+            return null;
+        }
+        String hash = fileSigner.extractHashCode(file, fileType);
+        if (hash == null) {
+            return null;
+        }
+        Mark mark = markRepository.findByHash(hash);
+        if (mark == null) {
+            log.error("[MARK] file has sign code but not in database <hash: {}>", hash);
+            return null;
+        }
+        return mark.getManuscriptId();
+    }
+
+    @Override
     public JudgeResult<FileSigner.FileData> checkIfFileUploadedOrSetHash(File file, byte[] bytes, FileType type) {
         // 该方法只会在文件上传时调用，数据不需要放到缓存里
         String hash;
@@ -73,7 +90,7 @@ public class ManuscriptServiceImpl implements ManuscriptService {
             case WORD2003:
             case WORD2007:
             case OFD:
-                hash = fileSigner.extractHashCodeFromZipFile(file.getPath());
+                hash = fileSigner.extractHashCodeFromZipFile(file);
                 if (hash != null) {
                     return new JudgeResult<>(true, new FileSigner.FileData(bytes, hash));
                 } else {
@@ -84,6 +101,7 @@ public class ManuscriptServiceImpl implements ManuscriptService {
                 }
 
             // 单一格式文件处理
+            case RTF:
             case PDF:
                 hash = fileSigner.extractHashCodeFromSingleFile(file);
                 if (hash != null) {

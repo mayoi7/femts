@@ -1,5 +1,6 @@
 package com.xidian.femts.core;
 
+import com.xidian.femts.constants.FileType;
 import com.xidian.femts.utils.ZipUtils;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -114,11 +115,34 @@ public class FileSigner {
     }
 
     /**
+     * 从文件中提取hash码
+     * @param file 文件数据（如果是压缩格式文件，则必须存在真实的物理数据，其他格式没有要求）
+     * @param fileType 文件类型
+     * @return 返回文件中埋的hash码，如果无法提取则返回空
+     */
+    public String extractHashCode(File file, FileType fileType) {
+        switch (fileType) {
+            case WORD2003:
+            case WORD2007:
+            case OFD:
+                return extractHashCodeFromZipFile(file);
+            case PDF:
+            case RTF:
+                return extractHashCodeFromSingleFile(file);
+            case TXT:
+            case CUSTOM:
+            default:
+                return null;
+        }
+    }
+
+    /**
      * 读取文件中埋的hash码
-     * @param path 文件路径
+     * @param file 文件数据（需要真实存在）
      * @return 从文件中读取的hash码
      */
-    public String extractHashCodeFromZipFile(String path) {
+    public String extractHashCodeFromZipFile(File file) {
+        String path = file.getPath();
         String fileHash = ZipUtils.getTargetDirectory(path, name -> name.startsWith("$"));
         if (fileHash == null) {
             log.info("[FILE] this file have not set signer <file_path: {}>", path);
@@ -131,7 +155,7 @@ public class FileSigner {
 
     /**
      * 读取文件中埋的hash码
-     * @param file 文件数据
+     * @param file 文件数据（不需要真实存在）
      * @return 从文件中读取的hash码
      */
     public String extractHashCodeFromSingleFile(File file) {

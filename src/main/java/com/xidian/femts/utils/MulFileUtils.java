@@ -1,5 +1,6 @@
 package com.xidian.femts.utils;
 
+import com.xidian.femts.constants.FileType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 
+import static com.xidian.femts.utils.TokenUtils.generateSingleMark;
 import static org.apache.commons.io.FileUtils.copyInputStreamToFile;
 
 /**
@@ -20,6 +22,38 @@ import static org.apache.commons.io.FileUtils.copyInputStreamToFile;
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class MulFileUtils {
+
+    public static File convertMulFileToFile(MultipartFile mulFile, FileType fileType) {
+        switch (fileType) {
+            case WORD2003:
+            case WORD2007:
+            case OFD:
+                return saveFile2Local(mulFile);
+            case PDF:
+            case TXT:
+            case CUSTOM:
+            default:
+                return changeMulFileToFile(mulFile);
+        }
+    }
+
+    /**
+     * 将文件保存到本地
+     * @param mulFile 浏览器上传的文件数据
+     * @return 保存后的文件数据
+     */
+    private static File saveFile2Local(MultipartFile mulFile) {
+        String basePath = "file/temp/";
+        // 上传文件重命名
+        String newName = generateSingleMark() + "-" + mulFile.getOriginalFilename();
+        try {
+            FileUtils.copyInputStreamToFile(mulFile.getInputStream(), new File(basePath, newName));
+        } catch (IOException ex) {
+            log.error("[FileSystem] file save to local failed <name: {}>" + mulFile.getOriginalFilename(), ex);
+            return null;
+        }
+        return new File(basePath + newName);
+    }
 
     /**
      * 将从客户端接收的文件转换为java的文件格式
