@@ -9,6 +9,7 @@ import com.xidian.femts.service.RedisService;
 import com.xidian.femts.service.UserService;
 import com.xidian.femts.service.impl.EmailService;
 import com.xidian.femts.utils.TokenUtils;
+import com.xidian.femts.vo.LoginData;
 import com.xidian.femts.vo.ResultVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.SecurityUtils;
@@ -23,6 +24,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
 
 import static com.xidian.femts.utils.NetworkUtils.getIpAddr;
 import static com.xidian.femts.utils.TokenUtils.compareActivationCode;
@@ -63,15 +65,15 @@ public class AuthController {
 
     /**
      * 登陆
-     *
-     * @param name 登陆名称，可以是用户名/手机号/邮箱/工号
-     * @param password 密码（明文）
+     * @param loginData 登陆数据
      * @return 如果成功，则返回默认成功信息
      */
     @PostMapping("/login")
-    public ResultVO login(@RequestParam("name") String name,
-                          @RequestParam("password") String password,
-                          HttpServletRequest request) {
+    public ResultVO login(@RequestBody LoginData loginData, HttpServletRequest request) {
+        String name = loginData.getName();
+        String password = loginData.getPassword();
+        boolean remember = loginData.isRemember();
+
         // 添加method自适应判断
         UserQueryCondition method = UserQueryCondition.judgeParamType(name);
 
@@ -88,8 +90,10 @@ public class AuthController {
         if (!subject.isAuthenticated()) {
             // 如果未认证，则在认证提交前准备 token（令牌）
             UsernamePasswordToken token = new UsernamePasswordToken(username, password);
-            // 默认保存登陆记录
-            token.setRememberMe(true);
+            // 保存登陆记录
+            if (remember) {
+                token.setRememberMe(true);
+            }
             // 执行认证登陆
             try {
                 subject.login(token);
@@ -138,12 +142,9 @@ public class AuthController {
      * @return {@link ResultVO}通知信息
      */
     @PostMapping("/regist")
-    public ResultVO registered(@RequestParam("username") String username,
-                               @RequestParam("jobId") Long jobId,
-                               @RequestParam("password") String password,
-                               @RequestParam("phone") String phone,
-                               @Email(regexp = "^(\\w-*\\.*)+@(\\w-?)+(\\.\\w{2,})+$")
-                                   @RequestParam("email") String email) {
+    public ResultVO registered(@NotBlank String username, @NotBlank Long jobId,
+                               @NotBlank String password, @NotBlank String phone,
+                               @NotBlank @Email(regexp = "^(\\w-*\\.*)+@(\\w-?)+(\\.\\w{2,})+$") String email) {
         // 先校验参数合法性
         if (!validUsername(username) || !validPassword(password) || !validPhone(phone)) {
             return new ResultVO("参数不合规范，请重新检查");

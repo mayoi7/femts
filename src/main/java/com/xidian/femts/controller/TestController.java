@@ -1,12 +1,10 @@
 package com.xidian.femts.controller;
 
 import com.xidian.femts.exception.ParamException;
+import com.xidian.femts.service.impl.DeveloperService;
 import com.xidian.femts.utils.MulFileUtils;
 import com.xidian.femts.vo.ResultVO;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
@@ -27,8 +25,24 @@ import java.net.URLEncoder;
 @RequestMapping("/test")
 public class TestController {
 
+    private final DeveloperService developerService;
+
+    public TestController(DeveloperService developerService) {
+        this.developerService = developerService;
+    }
+
     @PostMapping("/upload")
     public ResultVO uploadFile(MultipartFile mulFile) {
+        return ResultVO.SUCCESS;
+    }
+
+    @DeleteMapping("/cache")
+    public ResultVO deleteCache(@RequestParam("code") int cacheCode) {
+        if (cacheCode == 0) {
+            developerService.deleteDocCache();
+        } else if (cacheCode == 1) {
+            developerService.deleteUserCache();
+        }
         return ResultVO.SUCCESS;
     }
 

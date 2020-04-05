@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.xidian.femts.constants.*;
 import com.xidian.femts.dto.DocumentReq;
 import com.xidian.femts.dto.DocumentResp;
+import com.xidian.femts.entity.Content;
 import com.xidian.femts.entity.Directory;
 import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.entity.User;
@@ -189,36 +190,42 @@ public class ManuscriptController {
     /**
      * 更新文件，会同时更新文件系统中的文件<br/>
      * 实时性较强，不能采用消息队列异步执行
-     * @param manuscript 数据库中待更新的文档数据
+     * @param original 数据库中原始文档数据
      * @param document 新文档数据
      * @param editorId 编辑人用户id
      * @return 返回更新后的文档数据，如果返回空说明更新失败
      */
-    private Manuscript updateFile(Manuscript manuscript, DocumentReq document, Long editorId) {
+    private Manuscript updateFile(Manuscript original, DocumentReq document, Long editorId) {
         // 1. 更新数据库中content表
-        Long contentId = manuscriptService
-                .updateContent(manuscript.getContentId(), document.getContent());
-        if (!contentId.equals(manuscript.getContentId())) {
+        Content content = manuscriptService
+                .updateContent(original.getContentId(), document.getContent());
+        if (!content.getId().equals(original.getContentId())) {
             // 如果更新后的内容id不等于更新前的内容id，说明之前文档的内容id为空或是错误的
             log.error("[DOC] doc content id is wrong before <before_content_id: {}, after: {}>",
-                    manuscript.getContentId(), contentId);
+                    original.getContentId(), content.getId());
             // 目前直接返回空，如果该类情况出现，需要检查是否之前的设计出现了逻辑漏洞，
             // 而不应当掩饰这一错误，而应即使将错误抛出，避免导致更严重的错误
             return null;
         }
-        // 2. 修改文档编辑人
-        manuscript.setModifiedBy(editorId);
-        manuscript = manuscriptService.saveOrUpdateFile(manuscript.getId(), manuscript, null);
+        // 2. 修改其他信息
+        original.setTitle(document.getTitle());
+        original.setLevel(document.getLevel());
+        original.setModifiedBy(editorId);
+        // TODO: 2020/4/5 目录内容暂不更改
+        Manuscript manuscript = manuscriptService.saveOrUpdateFile(original.getId(), original, null);
 
-        // 3. 生成新文件（txt类型，类型在数据库中标记为枚举中的CUSTOM类型）
-        //    实际是将String类型转换为字节数据，模拟生成文件
-        byte[] bytes = document.getContent().getBytes();
-        // 4. 更新文件系统中真实文件，如果文件未上传过就上传，否则就更新
-        if (manuscript.getFileId() == null) {
-            // 自定义文件类型扩展名为空（可能会导致fastdfs错误，待测试）
-            storageService.upload(bytes, FileType.CUSTOM.getName());
-        } else {
-            storageService.modify(manuscript.getFileId(), bytes, FileType.CUSTOM.getName());
+        // 如果用户没有修改内容就不用更新fastdfs
+        if (content.getContent().equals(document.getContent())) {
+            // 3. 生成新文件（txt类型，类型在数据库中标记为枚举中的CUSTOM类型）
+            //    实际是将String类型转换为字节数据，模拟生成文件
+            byte[] bytes = document.getContent().getBytes();
+            // 4. 更新文件系统中真实文件，如果文件未上传过就上传，否则就更新
+            if (manuscript.getFileId() == null) {
+                // 自定义文件类型扩展名为空（可能会导致fastdfs错误，待测试）
+                storageService.upload(bytes, FileType.CUSTOM.getName());
+            } else {
+                storageService.modify(manuscript.getFileId(), bytes, FileType.CUSTOM.getName());
+            }
         }
         // 5. 添加操作记录
         historyService.addOptionHistory(editorId, manuscript.getId(),true, Operation.UPDATE);

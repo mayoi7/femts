@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>金融文稿追溯系统</title>
-    <link rel="stylesheet" href="../static/vendor/fontawesome-free/css/all.min.css">
-    <link rel="stylesheet" href="../static/vendor/element-ui/lib/theme-chalk/index.css">
-    <link rel="stylesheet" href="../static/css/femts.min.css">
-    <link rel="stylesheet" href="../static/css/index.css">
+    <link rel="stylesheet" href="/vendor/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="/vendor/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="/css/femts.min.css">
+    <link rel="stylesheet" href="/css/index.css">
     <style>
         body {
             /*overflow-y: hidden;*/
@@ -219,7 +219,7 @@
                         设置（不可用）
                     </a>
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                    <a class="dropdown-item" href="/api/1.0/auth/logout" data-toggle="modal" data-target="#logoutModal">
                         <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                         登出
                     </a>
@@ -230,9 +230,9 @@
 
     <div class="container">
         <div class="side-bar">
-            <el-tree :load="loadNodes" lazy :props="props" :expand-on-click-node="false">
+            <el-tree ref="directoryTree" node-key="id" :load="loadNodes" lazy :props="props" :expand-on-click-node="false" @node-click="showDoc">
               <div class="custom-tree-node" style="width: 100%;" slot-scope="{ node, data }">
-                  <div class="name d-inline-block float-left" @click="showDoc(node, data)">
+                  <div class="name d-inline-block float-left">
                       <span>{{ node.label }}</span>
                   </div>
                   <div class="options d-inline-block float-right" v-if="data.leaf === false">
@@ -341,11 +341,11 @@
     </div>
 </div>
 </body>
-<script src="../static/vendor/tinymce/tinymce.min.js"></script>
-<script src="../static/vendor/vue/vue.min.js"></script>
-<script src="../static/vendor/jquery/jquery.min.js"></script>
-<script src="../static/vendor/element-ui/lib/index.js"></script>
-<script src="../static/vendor/axios/axios.js"></script>
-<script src="../static/js/femts.min.js"></script>
-<script src="../static/js/index.js"></script>
+<script src="/vendor/tinymce/tinymce.min.js"></script>
+<script src="/vendor/vue/vue.min.js"></script>
+<script src="/vendor/jquery/jquery.min.js"></script>
+<script src="/vendor/element-ui/lib/index.js"></script>
+<script src="/vendor/axios/axios.js"></script>
+<script src="/js/femts.min.js"></script>
+<script src="/js/index.js"></script>
 </html>

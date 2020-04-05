@@ -3,6 +3,7 @@ package com.xidian.femts.service;
 import com.xidian.femts.constants.FileType;
 import com.xidian.femts.core.FileSigner;
 import com.xidian.femts.dto.JudgeResult;
+import com.xidian.femts.entity.Content;
 import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.entity.Mark;
 
@@ -71,9 +72,9 @@ public interface ManuscriptService {
      * 更新文档内容
      * @param contentId 文档内容id
      * @param content 更新后的文档内容
-     * @return 更新后的文档内容id
+     * @return 更新后的文档内容
      */
-    Long updateContent(Long contentId, String content);
+    Content updateContent(Long contentId, String content);
 
     /**
      * 根据文件hash查找数据库中存在的文档id

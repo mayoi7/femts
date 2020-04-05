@@ -148,10 +148,10 @@ public class ManuscriptServiceImpl implements ManuscriptService {
 
     @Override
     @CachePut(cacheNames = "content", key = "#contentId")
-    public Long updateContent(Long contentId, String content) {
+    public Content updateContent(Long contentId, String content) {
         Content record = new Content(contentId, content);
         // 返回值必不为空
-        return contentRepository.save(record).getId();
+        return contentRepository.saveAndFlush(record);
     }
 
     @Cacheable(cacheNames = "mark", key = "#hash")

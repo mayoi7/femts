@@ -11,9 +11,9 @@
 
     <title>金融企业文稿追溯系统 - 注册</title>
 
-    <link href="../static/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
     <link href="" rel="stylesheet">
-    <link href="../static/css/femts.min.css" rel="stylesheet">
+    <link href="/css/femts.min.css" rel="stylesheet">
     <style>
         input.form-control.input-error {
             border-color: #fff;
@@ -98,12 +98,13 @@
 
 </div>
 
-<script src="../static/vendor/jquery/jquery.min.js"></script>
-<script src="../static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="../static/vendor/jquery-easing/jquery.easing.min.js"></script>
-<script src="../static/vendor/vue/vue.min.js"></script>
-<script src="../static/vendor/axios/axios.js"></script>
-<script src="../static/js/femts.min.js"></script>
+<script src="/vendor/jquery/jquery.min.js"></script>
+<script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/vendor/jquery-easing/jquery.easing.min.js"></script>
+<script src="/vendor/vue/vue.min.js"></script>
+<script src="/vendor/element-ui/lib/index.js"></script>
+<script src="/vendor/axios/axios.js"></script>
+<script src="/js/femts.min.js"></script>
 <script>
     // const REG_USERNAME = /^[a-zA-Z]([a-zA-Z0-9]|[._]){5,20}$/;
     /** 汉字开头，加上一到3位的数字 */
@@ -197,7 +198,14 @@
                     if ($errors[i] !== null) return;
                 }
 
-                // window.location = "/login";
+                axios.post("/api/1.0/auth/regist", this.form)
+                    .then(res => {
+                        if (res.data.code === 200) {
+                            window.location = "/index";
+                        } else {
+                            this.$message.error(res.data.data);
+                        }
+                    }).catch(err => { this.$message.error(err); });
             }
         }
     });

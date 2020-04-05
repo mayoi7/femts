@@ -20,7 +20,7 @@ import java.util.Date;
  * @email  acerola.orion@foxmail.com
  */
 @Entity
-@Table ( name ="record" , schema = "")
+@Table ( name ="history" , schema = "")
 @Data
 @Builder
 @DynamicInsert

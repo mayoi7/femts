@@ -55,6 +55,6 @@ public class HistoryServiceImpl implements HistoryService {
                 .userId(userId).objectId(objectId)
                 .type(type).operation(operation)
                 .build();
-        historyRepository.save(history);
+        historyRepository.saveAndFlush(history);
     }
 }

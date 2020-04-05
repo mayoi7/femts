@@ -1,5 +1,5 @@
-const HOST = 'https://www.fastmock.site/mock/b643231b81d6851b3bf8fe14314271d4/femts';
-// const HOST = 'https://www.fastmock.site/mock/b643231b81d6851b3bf8fe14314271d4/femts/api/1.0';
+// const HOST = 'https://www.fastmock.site/mock/b643231b81d6851b3bf8fe14314271d4/femts';
+const HOST = '/api/1.0';
 let wait_time = 10;
 // 编辑器配置
 const options = {
@@ -55,31 +55,37 @@ let $app = new Vue({
             return false;
         },
         loadNodes(node, resolve) {
-            // console.log(node);
+            console.log(node);
             if (node.level === 0) {
                 this.node = node;
                 this.resolve = resolve;
                 let treeData;
-                axios.get(HOST + "/directory/list/0")
+                axios.get(HOST + "/doc/directory/list/0")
                     .then(res => {
                         if (res.data.code === 200) {
                             return resolve(res.data.data);
                         } else {
                             this.$message.error(res.data.data);
+                            return resolve([]);
                         }
                     }).catch(err => {
                     this.$message.error(err);
+                    return resolve([]);
                 });
             } else {
                 // let children = [];
-                axios.get(HOST + "/directory/list/" + node.data.id)
+                axios.get(HOST + "/doc/directory/list/" + node.data.id)
                     .then(res => {
                         if (res.data.code === 200) {
                             return resolve(res.data.data);
                         } else {
                             this.$message.error(res.data.data);
+                            return resolve([]);
                         }
-                    }).catch(err => {this.$message.error(err)});
+                    }).catch(err => {
+                        this.$message.error(err);
+                        return resolve([]);
+                    });
                 // return resolve([
                 //     {
                 //         id: 12,
@@ -172,7 +178,7 @@ let $app = new Vue({
             this.$prompt('请输入文档标题', '创建文档', {
                 confirmButtonText: '创建',
                 cancelButtonText: '取消',
-                inputPattern: /^[\u0391-\uFFE5A-Za-z]{3,20}$/,
+                inputPattern: /^[\u0391-\uFFE5A-Za-z_]{3,20}$/,
                 inputErrorMessage: '文档标题应为3-20位的中文或英文'
             }).then(({ value }) => {
                 axios.get(HOST + "/doc/detect?title=" + value)
@@ -249,7 +255,7 @@ let $app = new Vue({
                 level: SECURITY_LEVEL[this.$data.setting_select]
             };
 
-            axios.post(HOST + "/doc/:id", document)
+            axios.post(HOST + "/doc/" + this.doc.id, document)
                 .then(res => {
                     console.log(res.data);
                     loader.save_btn = false;
@@ -292,7 +298,11 @@ let $app = new Vue({
                 this.$message.error(err);
             });
         },
-        showDoc(node, data) {
+        showDoc() {
+            let data = this.$refs.directoryTree.getCurrentNode();
+            if (!data.leaf) {
+                return;
+            }
             axios.get(HOST + "/doc/" + data.id)
                 .then(res => {
                     if (res.data.code === 200) {

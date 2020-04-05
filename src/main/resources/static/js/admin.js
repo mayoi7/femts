@@ -1,5 +1,5 @@
-// const HOST = "https://www.fastmock.site/mock/b643231b81d6851b3bf8fe14314271d4/femts/api/1.0";
-const HOST = "https://www.fastmock.site/mock/b643231b81d6851b3bf8fe14314271d4/femts";
+const HOST = "/api/1.0";
+// const HOST = "https://www.fastmock.site/mock/b643231b81d6851b3bf8fe14314271d4/femts";
 const OPERATION_TYPE = ['创建','更新','删除','下载','上传'];
 const DOC_LEVEL = ['私人', '不可编辑', '仅上级可见', '公开'];
 

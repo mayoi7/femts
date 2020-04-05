@@ -46,10 +46,10 @@ public class ShiroConfig {
         // 必须设置 SecurityManager
         shiroFilterFactoryBean.setSecurityManager(securityManager);
         // setLoginUrl 如果不设置值，默认会自动寻找Web工程根目录下的"/login.jsp"页面 或 "/login" 映射
-//        shiroFilterFactoryBean.setLoginUrl("/api/1.0/auth/intercept");
-        shiroFilterFactoryBean.setLoginUrl("/index");
+        shiroFilterFactoryBean.setLoginUrl("/login");
+//        shiroFilterFactoryBean.setLoginUrl("/index");
         // 设置无权限时跳转的 url;
-        shiroFilterFactoryBean.setUnauthorizedUrl("");
+        shiroFilterFactoryBean.setUnauthorizedUrl("/error");
 
         //自定义拦截器限制并发人数,参考博客
         LinkedHashMap<String, Filter> filtersMap = new LinkedHashMap<>();
@@ -59,20 +59,23 @@ public class ShiroConfig {
 
         // 设置拦截器
         Map<String, String> filterChainDefinitionMap = new LinkedHashMap<>();
-/*
+
+        // 基础功能接口公开
+        filterChainDefinitionMap.put("/error/**", "anon");
+        filterChainDefinitionMap.put("/login/**", "anon");
+        filterChainDefinitionMap.put("/register/**", "anon");
+
         // 健康检查接口公开
         filterChainDefinitionMap.put("/health/**", "anon");
 
         // 测试接口公开
-        filterChainDefinitionMap.put("/api/1.0/test/**", "anon");
+        filterChainDefinitionMap.put("/test/**", "anon");
 
         // 公用api接口公开
         filterChainDefinitionMap.put("/api/1.0/open/**", "anon");
 
-        // 用户，需要记住我或认证
-        filterChainDefinitionMap.put("/api/1.0/user/**", "clc, user");
         // 管理员，需要角色权限 “admin”且已登录
-        filterChainDefinitionMap.put("/api/1.0/admin/**", "clc, authc, roles[admin]");
+        filterChainDefinitionMap.put("/admin/**", "clc, authc, roles[admin]");
 
         // 开放资源路径
         filterChainDefinitionMap.put("/css/**", "anon");
@@ -85,10 +88,9 @@ public class ShiroConfig {
         // 其余接口一律拦截
         // 主要这行代码必须放在所有权限设置的最后，不然会导致所有 url 都被拦截
         filterChainDefinitionMap.put("/**", "clc, user");
-*/
 
         // 测试阶段开放所有接口
-        filterChainDefinitionMap.put("/**", "anon");
+//        filterChainDefinitionMap.put("/**", "anon");
 
         shiroFilterFactoryBean.setFilterChainDefinitionMap(filterChainDefinitionMap);
         log.info("[Configuration] shiro filter factory has injected");
