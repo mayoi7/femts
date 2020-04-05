@@ -26,7 +26,8 @@ let $app = new Vue({
     data () {
         return {
             file: {},
-            file_type: 1,
+            file_type: 0,
+            show_upload: false,
             show_download_dialog: false,
             show_alert: false,
             show_setting: false,
@@ -42,16 +43,7 @@ let $app = new Vue({
             },
             node: [],
             resolve: [],
-            doc: {
-                id: 1,
-                directoryId: 2,
-                title: "测试文档标题English&*( $_)",
-                creator: "刘昊楠05",
-                created: '2019/07/12 12:56',
-                editor: "张三72",
-                edited: '2020/01/02 05:23',
-                content: `<div style="width:595.0pt;margin-bottom:56.0pt;margin-top:85.0pt;margin-left:85.0pt;margin-right:56.0pt;"><p style="text-align:center;"><span style="font-family:'楷体';font-size:16.0pt;font-weight:bold;">&#26159;&#30701;&#21457;&#25151;&#39030;&#19978;&#21453;&#20498;&#26159;&#26041;&#24335;</span></p><p>&#20799;&#21834;<span style="font-family:'宋体';font-size:16.0pt;">&#25746;&#26086;</span><span style="font-family:'宋体';font-size:16.0pt;font-style:italic;">&#38463;</span><span style="font-style:italic;">&#26031;&#39039;a</span>F&#21380;s<span style="text-decoration:underline;">d&#38750;</span>dss</p><p>&#25746;<span style="font-weight:bold;">&#26086;&#38463;&#26031;</span>&#39039;adsaa<span id="_GoBack"/></p><p>   &#21714;&#21714;&#21714;</p><p>&#21457;&#29983;&#22823;&#24133;</p></div>`
-            }
+            doc: {}
         }
     },
     methods: {
@@ -59,10 +51,13 @@ let $app = new Vue({
             this.$data.show_alert = false;
             this.$data.show_setting = false;
         },
+        checkIfAdmin() {
+            return false;
+        },
         loadNodes(node, resolve) {
             // console.log(node);
             if (node.level === 0) {
-                this.$data.node = node;
+                this.node = node;
                 this.resolve = resolve;
                 let treeData;
                 axios.get(HOST + "/directory/list/0")
@@ -173,9 +168,58 @@ let $app = new Vue({
             });
         },
         createManuscript(node, data) {
-
+            // console.log(data);
+            this.$prompt('请输入文档标题', '创建文档', {
+                confirmButtonText: '创建',
+                cancelButtonText: '取消',
+                inputPattern: /^[\u0391-\uFFE5A-Za-z]{3,20}$/,
+                inputErrorMessage: '文档标题应为3-20位的中文或英文'
+            }).then(({ value }) => {
+                axios.get(HOST + "/doc/detect?title=" + value)
+                    .then(res => {
+                        if (res.data.code === 200) {
+                            let docData = {
+                                title: value,
+                                content: '',
+                                directoryId: data.id,
+                                level: 'PRIVATE'
+                            };
+                            console.log(docData);
+                            axios.post(HOST + "/doc/", docData)
+                                .then(result => {
+                                    if (result.data.code === 200) {
+                                        this.doc = result.data.data;
+                                        data.children.push({
+                                            id: result.data.data.id,
+                                            name: value,
+                                            leaf: true
+                                        });
+                                        this.show_upload = true;
+                                        this.$message({
+                                            message: '创建成功',
+                                            type: 'success'
+                                        });
+                                    } else {
+                                        this.$message.error(result.data.data);
+                                    }
+                                });
+                        } else {
+                            this.$message.error(res.data.data);
+                        }
+                    }).catch(err => { this.$message.error(err); });
+            }).catch(() => {
+                this.$message({
+                    type: 'info',
+                    message: '取消输入'
+                });
+            });
+        },
+        refreshDirectoryTree() {
+            this.node.childNodes = [];
+            this.loadNodes(this.node, this.resolve);
         },
         edit() {
+            this.show_upload = false;
             this.$data.show_editor = true;
 
             setTimeout(function() {
@@ -210,6 +254,7 @@ let $app = new Vue({
                     console.log(res.data);
                     loader.save_btn = false;
                     if (res.data.code === 200) {
+                        this.refreshDirectoryTree();
                         this.$message({
                             message: '保存成功',
                             type: 'success'
@@ -231,14 +276,31 @@ let $app = new Vue({
             this.$data.file = file.raw;
         },
         uploadFile(param) {
-            // let form = new FormData();
-            // form.append('mulFile', this.$data.file);
-            // axios.post('/test/upload', form)
-            //     .then(res => {
-            //         console.log(res);
-            //     }).catch(err => {
-            //     this.$message.error(err);
-            // });
+            let form = new FormData();
+            form.append('mulFile', this.$data.file);
+            form.append('title', this.doc.title);
+            form.append('id', this.doc.id);
+            form.append('level', this.doc.level);
+            axios.post('/file/upload/' + this.doc.directoryId, form)
+                .then(res => {
+                    if (res.data.code === 200) {
+                        this.$data.doc = res.data.data;
+                    } else {
+                        this.$message.error(res.data.data);
+                    }
+                }).catch(err => {
+                this.$message.error(err);
+            });
+        },
+        showDoc(node, data) {
+            axios.get(HOST + "/doc/" + data.id)
+                .then(res => {
+                    if (res.data.code === 200) {
+                        this.doc = res.data.data;
+                    } else {
+                        this.$message.error(res.data.data);
+                    }
+            }).catch(err => { this.$message.error(err)} );
         }
     }
 });

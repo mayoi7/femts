@@ -80,12 +80,16 @@ public class FileSystemController {
      * </p>
      * @param mulFile Dropzone
      * @param directoryId 文档保存目录
+     * @param title 文档标题
+     * @param docId 文档id，可以没有（如果存在id则覆盖原文档）
      * @param level 文档安全级别（可视级别）
      * @return 文件上传是否成功的通知
      */
     @PostMapping("upload/{directoryId}")
     public ResultVO upload(MultipartFile mulFile,
                            @PathVariable("directoryId") Long directoryId,
+                           @RequestParam("title") String title,
+                           @RequestParam(value = "id", required = false) Long docId,
                            @RequestParam(value = "level", defaultValue = "PUBLIC") SecurityLevel level) {
         // 1. 获取登陆用户的id
         String username = TokenUtils.getLoggedUserInfo();
@@ -154,7 +158,14 @@ public class FileSystemController {
         // 6. 在数据库中保存文档信息
         String htmlContent = FileHtmlConverter.convertFileBytesToHTML(bytes, fileType);
         Long contentId = manuscriptService.saveContent(htmlContent);
-        Manuscript manuscript = manuscriptService.saveFile(userId, directoryId, contentId, mulFile.getName(), fileType, fileId, hash, level);
+
+        // 如果文档id不为空，则说明要覆盖数据库中原文档，否则创建新文档
+        Manuscript toSaved = Manuscript.builder()
+                .directoryId(directoryId).contentId(contentId).fileId(fileId)
+                .title(title).type(fileType).level(level)
+                .createdBy(userId).modifiedBy(userId)
+                .build();
+        Manuscript manuscript = manuscriptService.saveOrUpdateFile(docId, toSaved, hash);
         if (manuscript == null) {
             log.error("[FileSystem] save file to database failed <name: {}>", mulFile.getOriginalFilename());
             return new ResultVO(INTERNAL_SERVER_ERROR, "文件上传数据库失败");
@@ -226,7 +237,7 @@ public class FileSystemController {
              */
             String fileId = storageService.upload(bytes, FileType.WORD2003.getName());
             manuscript.setFileId(fileId);
-            manuscriptService.updateFile(manuscript.getId(), manuscript);
+            manuscriptService.saveOrUpdateFile(manuscript.getId(), manuscript, null);
         }
         // 如向响应流中写入文件，则必须返回null
         return null;

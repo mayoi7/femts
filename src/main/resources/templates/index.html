@@ -210,9 +210,9 @@
                 </a>
                 <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown"
                     :class="{show:show_setting}">
-                    <a class="dropdown-item" href="#">
+                    <a class="dropdown-item" href="/admin" v-if="checkIfAdmin()">
                         <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                        帐号信息（不可用）
+                        管理员
                     </a>
                     <a class="dropdown-item" href="#">
                         <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
@@ -232,7 +232,7 @@
         <div class="side-bar">
             <el-tree :load="loadNodes" lazy :props="props" :expand-on-click-node="false">
               <div class="custom-tree-node" style="width: 100%;" slot-scope="{ node, data }">
-                  <div class="name d-inline-block float-left">
+                  <div class="name d-inline-block float-left" @click="showDoc(node, data)">
                       <span>{{ node.label }}</span>
                   </div>
                   <div class="options d-inline-block float-right" v-if="data.leaf === false">
@@ -261,20 +261,21 @@
             <div class="info" style="margin: 2px 10px 10px 15px;">
                 <div class="author d-inline-block">{{doc.creator}}</div>
                 <div class="function d-inline-block" style="margin-left: 20px; font-size: 15px; float:right">
+                    <el-button type="text" @click="show_upload = true">上传</el-button>
                     <el-button type="text" @click="edit">编辑</el-button>
-                    <el-button type="text" @click="show_download_dialog = true">下载</el-button>
+                    <el-button type="text" @click="download">下载</el-button>
                     <el-dialog
                             title="选择下载格式"
                             :visible.sync="show_download_dialog"
                             width="39%">
                         <el-radio-group v-model="file_type">
                             <el-radio :label="0">doc</el-radio>
-                            <el-radio :label="1">docx</el-radio>
-                            <el-radio :label="2">txt</el-radio>
-                            <el-radio :label="3">pdf</el-radio>
-                            <el-radio :label="4">ofd</el-radio>
-                            <el-radio :label="5">rtf</el-radio>
-                            <el-radio :label="6">无格式</el-radio>
+                            <el-radio :label="1" disabled>docx</el-radio>
+                            <el-radio :label="2" disabled>txt</el-radio>
+                            <el-radio :label="3" disabled>pdf</el-radio>
+                            <el-radio :label="4" disabled>ofd</el-radio>
+                            <el-radio :label="5" disabled>rtf</el-radio>
+                            <el-radio :label="6" disabled>无格式</el-radio>
                         </el-radio-group>
                         <span slot="footer" class="dialog-footer">
                         <el-button @click="show_download_dialog = false">取消</el-button>
@@ -285,7 +286,7 @@
             </div>
             <hr>
             <div class="content" style="color: #000">
-                <div v-if="doc.content == null || doc.content === ''" style="text-align: center;margin-top: 100px;margin-bottom: 45px;">
+                <div v-if="show_upload" style="text-align: center;margin-top: 100px;margin-bottom: 45px;">
                     <el-upload
                             class="upload-demo"
                             drag

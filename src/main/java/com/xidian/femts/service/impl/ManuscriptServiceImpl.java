@@ -1,7 +1,6 @@
 package com.xidian.femts.service.impl;
 
 import com.xidian.femts.constants.FileType;
-import com.xidian.femts.constants.SecurityLevel;
 import com.xidian.femts.core.FileSigner;
 import com.xidian.femts.dto.JudgeResult;
 import com.xidian.femts.entity.Content;
@@ -126,35 +125,17 @@ public class ManuscriptServiceImpl implements ManuscriptService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    @CachePut(cacheNames = "doc", key = "#userId")
-    public Manuscript saveFile(Long userId, Long directoryId, Long contentId, String fileName, FileType fileType, String fileId,
-                               String hash, SecurityLevel level) {
-        // 保存时不知道文件id（数据表主键），缓存又是根据id来查询，所以无法添加缓存
-        Manuscript manuscript = Manuscript.builder()
-                .directoryId(directoryId).contentId(contentId).fileId(fileId)
-                .title(fileName).type(fileType).level(level)
-                .createdBy(userId).modifiedBy(userId)
-                .build();
-
+    @CachePut(cacheNames = "doc", key = "#result.id")
+    public Manuscript saveOrUpdateFile(Long id, Manuscript manuscript, String hash) {
+        manuscript.setId(id);
         Manuscript record = manuscriptRepository.saveAndFlush(manuscript);
         if (hash != null) {
             // 如果文件hash为空，说明文件未上传至文件系统，不需要存储文件标记
-            Mark mark = new Mark(record.getId(), fileType, hash);
+            Mark mark = new Mark(record.getId(), manuscript.getType(), hash);
             markRepository.save(mark);
         }
         return manuscript;
     }
-
-    @Override
-    public Manuscript updateFile(Long docId, Manuscript manuscript) {
-        if (docId == null) {
-            log.error("[DOC] doc id can not be null");
-            return null;
-        }
-        manuscript.setId(docId);
-        return manuscriptRepository.save(manuscript);
-    }
-
 
     @Override
     @Transactional(rollbackFor = Exception.class)

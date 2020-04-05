@@ -82,7 +82,7 @@ public class ManuscriptController {
      * 不需要传入更新/创建时间参数，以后端数据更新时间为准
      * @param id 文档id，如果无该参数则表明文档是新创建得来，没有id
      * @param document 文档数据
-     * @return 如果创建成功则返回SUCCESS，否则返回错误信息
+     * @return 如果创建/更新成功则返回文档信息，否则返回错误信息
      */
     @PostMapping("/{id}")
     public ResultVO createOrUpdateManuscript(@PathVariable(value = "id", required = false) Long id,
@@ -166,8 +166,12 @@ public class ManuscriptController {
      */
     private Manuscript createFile(DocumentReq document, Long creatorId) {
         Long contentId = manuscriptService.saveContent(document.getContent());
-        Manuscript manuscript = manuscriptService.saveFile(creatorId, document.getDirectoryId(),
-                contentId, document.getTitle(), FileType.CUSTOM, null, null, document.getLevel());
+        Manuscript toSaved = Manuscript.builder()
+                .directoryId(document.getDirectoryId()).type(FileType.CUSTOM)
+                .title(document.getTitle()).contentId(contentId)
+                .level(document.getLevel()).createdBy(creatorId)
+                .build();
+        Manuscript manuscript = manuscriptService.saveOrUpdateFile(null, toSaved, null);
         // 在目录表中记录
         Directory directory = directoryService.appendManuscript(document.getDirectoryId(), manuscript.getId());
         if (directory == null) {
@@ -204,7 +208,7 @@ public class ManuscriptController {
         }
         // 2. 修改文档编辑人
         manuscript.setModifiedBy(editorId);
-        manuscript = manuscriptService.updateFile(manuscript.getId(), manuscript);
+        manuscript = manuscriptService.saveOrUpdateFile(manuscript.getId(), manuscript, null);
 
         // 3. 生成新文件（txt类型，类型在数据库中标记为枚举中的CUSTOM类型）
         //    实际是将String类型转换为字节数据，模拟生成文件

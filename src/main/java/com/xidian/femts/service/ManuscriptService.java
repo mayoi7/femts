@@ -1,7 +1,6 @@
 package com.xidian.femts.service;
 
 import com.xidian.femts.constants.FileType;
-import com.xidian.femts.constants.SecurityLevel;
 import com.xidian.femts.core.FileSigner;
 import com.xidian.femts.dto.JudgeResult;
 import com.xidian.femts.entity.Manuscript;
@@ -52,27 +51,13 @@ public interface ManuscriptService {
     JudgeResult<FileSigner.FileData> checkIfFileUploadedOrSetHash(File file, byte[] bytes, FileType type);
 
     /**
-     * 在数据库中创建文件（禁止更新）
-     * @param userId 用户id（创建人）
-     * @param directoryId 保存的目录id
-     * @param contentId 文档内容id
-     * @param fileName 文件名
-     * @param fileType 文件格式
-     * @param fileId fastdfs中的文件id
-     * @param hash 文件hash
-     * @param level 文件权限级别
+     * 在数据库中创建文件（禁止更新，会将id强行置空）
+     * @param id 文档id，如果为空，则表示创建文档
+     * @param manuscript 文档数据
+     * @param hash 文件hash，如果为空表示文件不上传文件系统
      * @return 返回插入后数据库的数据
      */
-    Manuscript saveFile(Long userId, Long directoryId, Long contentId, String fileName, FileType fileType, String fileId,
-                        String hash, SecurityLevel level);
-
-    /**
-     * 更新文档数据
-     * @param docId 文档id，会覆盖manuscript中的id
-     * @param manuscript 文档数据
-     * @return 返回更新后的记录
-     */
-    Manuscript updateFile(Long docId, Manuscript manuscript);
+    Manuscript saveOrUpdateFile(Long id, Manuscript manuscript, String hash);
 
 
     /**
