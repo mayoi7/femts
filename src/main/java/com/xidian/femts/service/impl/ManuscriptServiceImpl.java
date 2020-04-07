@@ -12,6 +12,7 @@ import com.xidian.femts.repository.MarkRepository;
 import com.xidian.femts.service.InternalCacheService;
 import com.xidian.femts.service.ManuscriptService;
 import com.xidian.femts.utils.MulFileUtils;
+import com.xidian.femts.vo.SimpleDocInterface;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
+import java.util.List;
 
 import static com.xidian.femts.constants.HashAlgorithm.MD5;
 import static com.xidian.femts.utils.HashUtils.hashBytes;
@@ -81,6 +83,7 @@ public class ManuscriptServiceImpl implements ManuscriptService {
 
     @Override
     public JudgeResult<FileSigner.FileData> checkIfFileUploadedOrSetHash(File file, byte[] bytes, FileType type) {
+        // TODO: 2020/4/6 修改逻辑流程，允许多个文档引用同一内容
         // 该方法只会在文件上传时调用，数据不需要放到缓存里
         String hash;
         FileSigner.FileData fileData;
@@ -163,5 +166,10 @@ public class ManuscriptServiceImpl implements ManuscriptService {
     @Override
     public Long countManuscript() {
         return manuscriptRepository.count();
+    }
+
+    @Override
+    public List<SimpleDocInterface> fuzzyFindByTitle(String title) {
+        return manuscriptRepository.findByTitleLike(title);
     }
 }

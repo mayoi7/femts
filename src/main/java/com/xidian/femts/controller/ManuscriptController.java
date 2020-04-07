@@ -10,14 +10,13 @@ import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.entity.User;
 import com.xidian.femts.service.*;
 import com.xidian.femts.utils.TokenUtils;
-import com.xidian.femts.vo.DirectoryElement;
-import com.xidian.femts.vo.DocumentInfo;
-import com.xidian.femts.vo.ReadWritePermission;
-import com.xidian.femts.vo.ResultVO;
+import com.xidian.femts.vo.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authz.annotation.RequiresRoles;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.xidian.femts.constants.UserQueryCondition.ID;
@@ -62,10 +61,12 @@ public class ManuscriptController {
     /**
      * 根据文档id查询数据
      * @param id 文档id
+     * @param detail 是否返回详细信息，true：是
      * @return 返回code为200时，data为对应数据对象；返回code为400时，data为错误信息
      */
     @GetMapping("/{id}")
-    public ResultVO returnDocById(@PathVariable("id") Long id) {
+    public ResultVO returnDocById(@PathVariable("id") Long id,
+                                  @RequestParam(value = "detail", defaultValue = "false") boolean detail) {
         Manuscript manuscript = cacheService.findById_Manuscript(id);
         if (manuscript == null) {
             log.error("[DOC] doc id is not found <doc_id: {}>", id);
@@ -75,27 +76,30 @@ public class ManuscriptController {
         String creator = userService.findUsernameById(manuscript.getCreatedBy());
         String editor = userService.findUsernameById(manuscript.getModifiedBy());
 
-        return new ResultVO(new DocumentResp(manuscript, content, creator, editor));
+        if (detail) {
+            return new ResultVO(new DocumentInfo(manuscript,content, creator, editor));
+        } else {
+            return new ResultVO(new DocumentResp(manuscript, content, creator, editor));
+        }
     }
 
     /**
      * 创建或更新文档<br/>
      * 不需要传入更新/创建时间参数，以后端数据更新时间为准
-     * @param id 文档id，如果无该参数则表明文档是新创建得来，没有id
      * @param document 文档数据
      * @return 如果创建/更新成功则返回文档信息，否则返回错误信息
      */
-    @PostMapping("/{id}")
-    public ResultVO createOrUpdateManuscript(@PathVariable(value = "id", required = false) Long id,
-                                             @RequestBody DocumentReq document) {
+    @PostMapping("/post")
+    public ResultVO createOrUpdateManuscript(@RequestBody DocumentReq document) {
+        Long id = document.getId();
         Manuscript manuscript;
         // 先获取当前登陆的用户，即操作人
         String username = TokenUtils.getLoggedUserInfo();
         User operator = userService.findByCondition(username, USERNAME);
 
         Manuscript result = manuscriptService.findByTitle(operator.getId(), document.getTitle());
-        if (result != null) {
-            // 如果重名，则禁止创建或修改
+        if (result != null && !result.getId().equals(document.getId())) {
+            // 如果重名，则禁止创建或更新（这里的更新指更新标题）
             return new ResultVO(BAD_REQUEST, "已经创建过同名文档，禁止更新/创建");
         }
 
@@ -136,6 +140,51 @@ public class ManuscriptController {
      * 1. 更新者就是文档创建者<br/>
      * 2. 文档设置为公开<br/>
      * 2. 文档设置为仅上级可编辑，且更新人就是操作人<br/>
+     * @param id 文档id
+     * @return true：可以进行更新
+     */
+    @GetMapping("/check/edit/{id}")
+    public ResultVO checkEditPermission(@PathVariable("id") Long id) {
+        String editorName = TokenUtils.getLoggedUserInfo();
+        User editor = userService.findByCondition(editorName, USERNAME);
+        if (editor == null) {
+            log.error("[USER] logged user not found <name: {}>", editorName);
+            return new ResultVO(INTERNAL_SERVER_ERROR, "登陆信息异常");
+        }
+
+        Manuscript toEdit = cacheService.findById_Manuscript(id);
+        if (toEdit == null) {
+            log.error("[DOC] doc with such id is not found <id: {}>", id);
+            return new ResultVO(BAD_REQUEST, "文档id不存在");
+        }
+        Long creatorId = toEdit.getCreatedBy();
+
+        // 文档创建人就是编辑人，则无条件授权
+        if (creatorId.equals(editor.getId())) {
+            return ResultVO.SUCCESS;
+        }
+
+        User creator = userService.findByCondition(creatorId.toString(), ID);
+        if (creator == null) {
+            log.error("[USER] doc creator is not found <doc_id: {}, creator_id: {}>", id, creatorId);
+            // 如果创建人为空，则可能是用户已被注销或锁定
+            return new ResultVO(INTERNAL_SERVER_ERROR, "文档状态异常");
+        }
+        Integer editorLevel = editor.getLevel();
+        Integer creatorLevel = creator.getLevel();
+        if (toEdit.getLevel().canWrite(editorLevel, creatorLevel)) {
+            return ResultVO.SUCCESS;
+        } else {
+            return new ResultVO(BAD_REQUEST, "无权更新");
+        }
+    }
+
+    /**
+     * 检查用户是否有权限更新文档<br/>
+     * 以下情况才可以进行更新：<br/>
+     * 1. 更新者就是文档创建者<br/>
+     * 2. 文档设置为公开<br/>
+     * 2. 文档设置为仅上级可编辑，且更新人就是操作人<br/>
      * @param manuscript 文档数据
      * @param editorId 操作人id，禁止为空
      * @param editorLevel 用户人权限级别
@@ -166,11 +215,14 @@ public class ManuscriptController {
      * @return 返回存储后的文档数据，携带有id信息；如果返回空说明插入失败
      */
     private Manuscript createFile(DocumentReq document, Long creatorId) {
-        Long contentId = manuscriptService.saveContent(document.getContent());
+        Long contentId = null;
+        if (!StringUtils.isEmpty(document.getContent())) {
+            contentId = manuscriptService.saveContent(document.getContent());
+        }
         Manuscript toSaved = Manuscript.builder()
                 .directoryId(document.getDirectoryId()).type(FileType.CUSTOM)
                 .title(document.getTitle()).contentId(contentId)
-                .level(document.getLevel()).createdBy(creatorId)
+                .level(document.getLevel()).createdBy(creatorId).modifiedBy(creatorId)
                 .build();
         Manuscript manuscript = manuscriptService.saveOrUpdateFile(null, toSaved, null);
         // 在目录表中记录
@@ -266,37 +318,55 @@ public class ManuscriptController {
      * 根据文档标题（和创建者用户名）查询对应的文档内容
      * @param title 文档标题
      * @param creator 文档创建者用户名
-     * @param id 文档id，如果该参数为空，则使用title和creator进行查询，否则直接使用文档id进行查询;
-     *           如果该项参数不为空，则会忽略title和creator参数，仅使用id进行查找
      * @return 返回查询到的文档信息
      */
     @GetMapping("/info/name")
     @RequiresRoles("admin")
     public ResultVO findDocumentInfoWithTitle(@RequestParam("title") String title,
-                                              @RequestParam("creator") String creator,
-                                              @RequestParam(value = "id", required = false) Long id) {
-        Manuscript manuscript;
-        if (id != null) {
-            manuscript = cacheService.findById_Manuscript(id);
-            // id查询的优先值高于title查询
-            creator = userService.findUsernameById(manuscript.getCreatedBy());
-        } else {
-            Long creatorId = userService.findIdByUsername(creator);
-            if (creatorId == null) {
-                log.error("[DOC] doc creator name is not found <creator: {}>", creator);
-                // 大概率是用户自行拼接参数错误，所以不返回500异常
-                return new ResultVO(BAD_REQUEST, "文档创建者不存在");
-            }
-            manuscript = manuscriptService.findByTitle(creatorId, title);
+                                              @RequestParam("creator") String creator) {
+        Long creatorId = userService.findIdByUsername(creator);
+        if (creatorId == null) {
+            log.error("[DOC] doc creator name is not found <creator: {}>", creator);
+            // 大概率是用户自行拼接参数错误，所以不返回500异常
+            return new ResultVO(BAD_REQUEST, "文档创建者不存在");
         }
+        Manuscript manuscript = manuscriptService.findByTitle(creatorId, title);
         if (manuscript == null) {
-            log.error("[DOC] doc with such title and creator is not found <id: {}, title: {}, creator: {}>",
-                    id, title, creator);
+            log.error("[DOC] doc with such title and creator is not found <title: {}, creator: {}>",
+                    title, creator);
             return new ResultVO(BAD_REQUEST, "该用户未创建过此标题的文档");
         }
         String content = cacheService.findContentById_Content(manuscript.getContentId());
         String editor = userService.findUsernameById(manuscript.getModifiedBy());
         return new ResultVO(new DocumentInfo(manuscript, content, creator, editor));
+    }
+
+    /**
+     * 检测标题是否可用
+     * @param title 标题
+     * @param creator 创建人，如果不存在则采用当前登陆用户
+     * @return 返回成功则说明信息可用（目前检测的字段仅限标题）
+     */
+    @GetMapping("detect")
+    public ResultVO detectPropsAvailable(@RequestParam(value = "title", required = false) String title,
+                                         @RequestParam(value = "creator", required = false) String creator) {
+        if (title == null) {
+            return new ResultVO(BAD_REQUEST, "标题不能为空");
+        }
+        if (creator == null) {
+            creator = TokenUtils.getLoggedUserInfo();
+        }
+        Long creatorId = userService.findIdByUsername(creator);
+        if (creatorId == null) {
+            log.error("[USER] creator not found <creator: {}>", creator);
+            return new ResultVO(BAD_REQUEST, "查无用户");
+        }
+        Manuscript manuscript = manuscriptService.findByTitle(creatorId, title);
+        if (manuscript == null) {
+            return ResultVO.SUCCESS;
+        } else {
+            return new ResultVO(BAD_REQUEST, "已存在同名文档");
+        }
     }
 
     /**
@@ -430,6 +500,20 @@ public class ManuscriptController {
             return new ResultVO(BAD_REQUEST, "目录id不存在");
         }
         return ResultVO.SUCCESS;
+    }
+
+    @GetMapping("/list/title")
+    public ResultVO fuzzyQueryTitle(@RequestParam("title") String title) {
+        if (title.isEmpty()) {
+            return ResultVO.SUCCESS;
+        }
+        List<SimpleDocInterface> interfaces = manuscriptService.fuzzyFindByTitle(title);
+        List<SimpleDoc> docs = new ArrayList<>(interfaces.size());
+        interfaces.forEach(doc -> {
+            String name = userService.findUsernameById(doc.getCreatorId());
+            docs.add(new SimpleDoc(doc, name));
+        });
+        return new ResultVO(docs);
     }
 }
 

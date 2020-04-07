@@ -10,6 +10,7 @@ import com.xidian.femts.service.RedisService;
 import com.xidian.femts.service.UserService;
 import com.xidian.femts.service.impl.EmailService;
 import com.xidian.femts.shiro.ShiroSessionListener;
+import com.xidian.femts.utils.EntityUtils;
 import com.xidian.femts.utils.TokenUtils;
 import com.xidian.femts.vo.ResultVO;
 import com.xidian.femts.vo.SystemCount;
@@ -108,7 +109,9 @@ public class UserController {
     @RequiresRoles("admin")
     public ResultVO updateUserInfo(@PathVariable Long userId, @RequestBody User user,
                                    @RequestParam(value = "needCheck", defaultValue = "true") boolean needCheck) {
-        if (user.getState().getCode() >= UserState.ADMIN.getCode()) {
+        User rawData = userService.findByCondition(userId.toString(), ID);
+
+        if (!rawData.getState().isAdmin() && user.getState().isAdmin()) {
             // 如果用户通过该接口赋予管理员权限，则直接记录信息并阻止
             String authorizer = TokenUtils.getLoggedUserInfo();
             String ip = TokenUtils.getLoggedUserInfo();
@@ -118,8 +121,7 @@ public class UserController {
         }
         if (needCheck) {
             // 如果不手动指定，则默认进行参数检验
-            User oldData = userService.findByCondition(userId.toString(), ID);
-            String errorMsg = checkUserParam(oldData, user);
+            String errorMsg = checkUserParam(rawData, user);
             if (errorMsg != null) {
                 return new ResultVO(BAD_REQUEST, errorMsg);
             }
@@ -128,7 +130,10 @@ public class UserController {
         user.setPassword(null);
         user.setId(userId);
 
-        User updated = userService.updateUser(userId, user);
+        EntityUtils.copyProperties(user, rawData, true);
+
+        User updated = userService.updateUser(userId, rawData);
+        updated.setPassword(null);
         return new ResultVO(updated);
     }
 

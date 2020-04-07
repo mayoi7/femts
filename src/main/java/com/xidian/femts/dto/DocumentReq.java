@@ -12,6 +12,10 @@ import lombok.Data;
  */
 @Data
 public class DocumentReq {
+
+    /** 文档id，如果存在则表示需要更新，否则表示创建文档 */
+    private Long id;
+
     /** 文档标题 */
     private String title;
 

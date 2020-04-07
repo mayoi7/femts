@@ -6,8 +6,10 @@ import com.xidian.femts.dto.JudgeResult;
 import com.xidian.femts.entity.Content;
 import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.entity.Mark;
+import com.xidian.femts.vo.SimpleDocInterface;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * 文稿服务接口（Manuscript表和Mark表）
@@ -88,4 +90,11 @@ public interface ManuscriptService {
      * @return 返回数据库中现存文档总数（会包含已删除的文档，所以可能会有误差）
      */
     Long countManuscript();
+
+    /**
+     * 模糊前缀匹配标题查询
+     * @param title 标题
+     * @return 返回查询结果
+     */
+    List<SimpleDocInterface> fuzzyFindByTitle(String title);
 }

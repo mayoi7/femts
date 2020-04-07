@@ -2,6 +2,7 @@ package com.xidian.femts.controller;
 
 import com.xidian.femts.constants.*;
 import com.xidian.femts.core.FileSigner;
+import com.xidian.femts.dto.DocumentResp;
 import com.xidian.femts.dto.JudgeResult;
 import com.xidian.femts.entity.History;
 import com.xidian.femts.entity.Manuscript;
@@ -10,6 +11,7 @@ import com.xidian.femts.entity.User;
 import com.xidian.femts.service.*;
 import com.xidian.femts.utils.FileHtmlConverter;
 import com.xidian.femts.utils.MulFileUtils;
+import com.xidian.femts.utils.PackageUtils;
 import com.xidian.femts.utils.TokenUtils;
 import com.xidian.femts.vo.OperationHistory;
 import com.xidian.femts.vo.PageableResultVO;
@@ -86,10 +88,8 @@ public class FileSystemController {
      * @return 文件上传是否成功的通知
      */
     @PostMapping("upload/{directoryId}")
-    public ResultVO upload(MultipartFile mulFile,
-                           @PathVariable("directoryId") Long directoryId,
-                           @RequestParam("title") String title,
-                           @RequestParam(value = "id", required = false) Long docId,
+    public ResultVO upload(MultipartFile mulFile, @PathVariable("directoryId") Long directoryId,
+                           String title, Long docId,
                            @RequestParam(value = "level", defaultValue = "PUBLIC") SecurityLevel level) {
         // 1. 获取登陆用户的id
         String username = TokenUtils.getLoggedUserInfo();
@@ -140,7 +140,10 @@ public class FileSystemController {
                         mulFile.getOriginalFilename());
                 return new ResultVO(BAD_REQUEST, "文件中的标识符在数据库中不存在，请检查文件是否正确");
             }
-            return new ResultVO(cacheService.findById_Manuscript(mark.getManuscriptId()));
+            Manuscript foundDoc = cacheService.findById_Manuscript(mark.getManuscriptId());
+            String content = cacheService.findContentById_Content(foundDoc.getContentId());
+            String creator = userService.findUsernameById(foundDoc.getCreatedBy());
+            return new ResultVO(new DocumentResp(foundDoc, content, creator, username));
         }
         String hash = fileData.hash;
         bytes = fileData.bytes;
@@ -160,11 +163,23 @@ public class FileSystemController {
         Long contentId = manuscriptService.saveContent(htmlContent);
 
         // 如果文档id不为空，则说明要覆盖数据库中原文档，否则创建新文档
-        Manuscript toSaved = Manuscript.builder()
-                .directoryId(directoryId).contentId(contentId).fileId(fileId)
-                .title(title).type(fileType).level(level)
-                .createdBy(userId).modifiedBy(userId)
-                .build();
+        Manuscript toSaved;
+        if (docId == null) {
+            toSaved = Manuscript.builder()
+                    .directoryId(directoryId).contentId(contentId).fileId(fileId)
+                    .title(title).type(fileType).level(level)
+                    .createdBy(userId).modifiedBy(userId)
+                    .build();
+        } else {
+            toSaved = cacheService.findById_Manuscript(docId);
+            if (toSaved == null) {
+                log.error("[FILE] doc id is not found <doc_id: {}>", docId);
+                return new ResultVO(BAD_REQUEST, "文档id不存在");
+            }
+            toSaved.setFileId(fileId);
+            toSaved.setContentId(contentId);
+            toSaved.setModifiedBy(userId);
+        }
         Manuscript manuscript = manuscriptService.saveOrUpdateFile(docId, toSaved, hash);
         if (manuscript == null) {
             log.error("[FileSystem] save file to database failed <name: {}>", mulFile.getOriginalFilename());
@@ -182,7 +197,8 @@ public class FileSystemController {
 
         // 9. 添加操作记录
         historyService.addOptionHistory(userId, manuscript.getId(),true, Operation.CREATE);
-        return new ResultVO(CREATED, manuscript);
+        String creator = userService.findUsernameById(manuscript.getCreatedBy());
+        return new ResultVO(new DocumentResp(manuscript, htmlContent, creator, username));
     }
 
     /**
@@ -211,7 +227,7 @@ public class FileSystemController {
                     id, manuscript.getContentId());
             return new ResultVO(INTERNAL_SERVER_ERROR, "文档内容异常");
         }
-
+        content = PackageUtils.packageHtml(content);
         byte[] bytes = FileHtmlConverter.convertHTMLToWord2007(content);
         if (bytes == null) {
             log.error("[FILE] file converter error <content_id: {}>", manuscript.getContentId());
@@ -272,7 +288,7 @@ public class FileSystemController {
         List<OperationHistory> records = new ArrayList<>(histories.getSize());
         histories.get().forEach(item -> {
             String tempName = userService.findUsernameById(item.getUserId());
-            records.add(new OperationHistory(item, tempName));
+            records.add(new OperationHistory(item, tempName, true));
         });
         return new PageableResultVO(records, histories.getTotalPages());
     }

@@ -206,11 +206,10 @@
             <li class="nav-item dropdown no-arrow">
                 <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
                    aria-haspopup="true" :aria-expanded="show_setting" @click.stop="show_setting=!show_setting">
-                    <span class="mr-2 d-none d-lg-inline text-gray-600 small">Test User</span>
+                    <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{user.username}}</span>
                 </a>
-                <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown"
-                    :class="{show:show_setting}">
-                    <a class="dropdown-item" href="/admin" v-if="checkIfAdmin()">
+                <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown" :class="{show:show_setting}">
+                    <a class="dropdown-item" href="/admin" v-if="user.state === 'ADMIN' || user.state === 'SUPER_ADMIN'">
                         <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                         管理员
                     </a>
@@ -263,7 +262,7 @@
                 <div class="function d-inline-block" style="margin-left: 20px; font-size: 15px; float:right">
                     <el-button type="text" @click="show_upload = true">上传</el-button>
                     <el-button type="text" @click="edit">编辑</el-button>
-                    <el-button type="text" @click="download">下载</el-button>
+                    <el-button type="text" @click="show_download_dialog = true">下载</el-button>
                     <el-dialog
                             title="选择下载格式"
                             :visible.sync="show_download_dialog"
@@ -331,6 +330,7 @@
                                 </el-dropdown-item>
                             </el-dropdown-menu>
                         </el-dropdown>
+                        <el-button type="info" plain @click="cancelSave">取消</el-button>
                         <el-button type="primary" plain :loading="loader.save_btn" @click="saveDoc">保存文档</el-button>
                     </div>
                 </div>

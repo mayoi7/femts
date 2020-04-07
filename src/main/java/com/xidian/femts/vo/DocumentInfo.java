@@ -38,7 +38,7 @@ public class DocumentInfo {
     private String creator;
 
     /** 文档创建时间 */
-    private Date createAt;
+    private Date createdAt;
 
     /** 文档最近编辑人的用户名 */
     private String editor;
@@ -52,7 +52,7 @@ public class DocumentInfo {
         this.title = manuscript.getTitle();
         this.format = manuscript.getType().getName();
         this.level = manuscript.getLevel().getCode();
-        this.createAt = manuscript.getCreatedAt();
+        this.createdAt = manuscript.getCreatedAt();
         this.editedAt = manuscript.getModifiedAt();
 
         this.content = content;

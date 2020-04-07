@@ -40,5 +40,4 @@ public interface HistoryRepository extends JpaRepository<History, Long> {
      */
     @Query(value = "select * from history where object_id = :objectId and type = :type order by id desc", nativeQuery = true)
     Page<History> listHistoriesByObjectIdAndTypeInPage(boolean type, Long objectId, Pageable pageable);
-
 }

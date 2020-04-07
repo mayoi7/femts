@@ -24,7 +24,17 @@ tinymce.init(options);
 let $app = new Vue({
     el: '#app',
     data () {
+        axios.get(HOST + "/user/")
+            .then(res => {
+                if (res.data.code === 200) {
+                    this.user = res.data.data;
+                } else {
+                    this.$message.error(res.data.data);
+                }
+            }).catch(err => { this.$message.error(err); });
+
         return {
+            user: {},
             file: {},
             file_type: 0,
             show_upload: false,
@@ -43,7 +53,8 @@ let $app = new Vue({
             },
             node: [],
             resolve: [],
-            doc: {}
+            doc: {},
+            doc_backup: {}
         }
     },
     methods: {
@@ -174,7 +185,8 @@ let $app = new Vue({
             });
         },
         createManuscript(node, data) {
-            // console.log(data);
+            console.log(data);
+            let crtData = data;
             this.$prompt('请输入文档标题', '创建文档', {
                 confirmButtonText: '创建',
                 cancelButtonText: '取消',
@@ -191,15 +203,18 @@ let $app = new Vue({
                                 level: 'PRIVATE'
                             };
                             console.log(docData);
-                            axios.post(HOST + "/doc/", docData)
+                            axios.post(HOST + "/doc/post", docData)
                                 .then(result => {
                                     if (result.data.code === 200) {
                                         this.doc = result.data.data;
-                                        data.children.push({
-                                            id: result.data.data.id,
-                                            name: value,
-                                            leaf: true
-                                        });
+                                        const newChild = {
+                                            'id': result.data.data.id,
+                                            'name': value,
+                                            'leaf': true,
+                                            'children': []
+                                        };
+                                        crtData.children.push(newChild);
+                                        // this.refreshDirectoryTree();
                                         this.show_upload = true;
                                         this.$message({
                                             message: '创建成功',
@@ -225,21 +240,38 @@ let $app = new Vue({
             this.loadNodes(this.node, this.resolve);
         },
         edit() {
-            this.show_upload = false;
-            this.$data.show_editor = true;
+            axios.get(HOST + "/doc/check/edit/" + this.doc.id)
+                .then(res => {
+                    if (res.data.code === 200) {
+                        // 备份原文档数据
+                        this.doc_backup = this.doc;
 
-            setTimeout(function() {
-                if ($('#editor').is(":visible")) {
-                    tinymce.init(options);
-                } else {
-                    this.$message.error("编辑器加载失败，请重新点击'编辑'按钮");
-                    // 每次等待时间延长50毫秒，保证用户不会一直加载失败
-                    wait_time += 50;
-                }
-            }, wait_time);
+                        this.show_upload = false;
+                        this.$data.show_editor = true;
+
+                        setTimeout(function() {
+                            if ($('#editor').is(":visible")) {
+                                tinymce.init(options);
+                            } else {
+                                this.$message.error("编辑器加载失败，请重新点击'编辑'按钮");
+                                // 每次等待时间延长50毫秒，保证用户不会一直加载失败
+                                wait_time += 50;
+                            }
+                        }, wait_time);
+                    } else {
+                        this.$message.error(res.data.data);
+                    }
+                }).catch(err => { this.$message.error(err); });
         },
         download() {
-            this.$data.show_download_dialog = false;
+            // 关闭弹窗
+            this.show_download_dialog = false;
+            window.location.href = HOST + "/file/download/" + this.doc.id;
+        },
+        cancelSave() {
+            this.doc = this.doc_backup;
+            this.show_upload = false;
+            this.show_editor = false;
         },
         saveDoc() {
             let doc = this.$data.doc;
@@ -249,15 +281,15 @@ let $app = new Vue({
             let html = tinyMCE.activeEditor.getContent();
             doc.content = html;
             let document = {
+                id: doc.id,
                 title: doc.title,
                 content: html,
                 directoryId: doc.directoryId,
                 level: SECURITY_LEVEL[this.$data.setting_select]
             };
-
-            axios.post(HOST + "/doc/" + this.doc.id, document)
+            axios.post(HOST + "/doc/post", document)
                 .then(res => {
-                    console.log(res.data);
+                    // console.log(res.data);
                     loader.save_btn = false;
                     if (res.data.code === 200) {
                         this.refreshDirectoryTree();
@@ -272,7 +304,7 @@ let $app = new Vue({
                 }).catch(err => {
                 loader.save_btn = false;
                 this.$message.error(err);
-            })
+            });
         },
         selectSecurityLevel(command) {
             console.log(command);
@@ -285,12 +317,14 @@ let $app = new Vue({
             let form = new FormData();
             form.append('mulFile', this.$data.file);
             form.append('title', this.doc.title);
-            form.append('id', this.doc.id);
-            form.append('level', this.doc.level);
-            axios.post('/file/upload/' + this.doc.directoryId, form)
+            form.append('docId', this.doc.id);
+            axios.post(HOST + '/file/upload/' + this.doc.directoryId
+                + "?level=" + SECURITY_LEVEL[this.doc.level], form)
                 .then(res => {
                     if (res.data.code === 200) {
                         this.$data.doc = res.data.data;
+                        this.show_upload = false;
+                        this.show_editor = false;
                     } else {
                         this.$message.error(res.data.data);
                     }
@@ -307,6 +341,8 @@ let $app = new Vue({
                 .then(res => {
                     if (res.data.code === 200) {
                         this.doc = res.data.data;
+                        this.show_upload = false;
+                        this.show_editor = false;
                     } else {
                         this.$message.error(res.data.data);
                     }

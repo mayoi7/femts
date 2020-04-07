@@ -60,4 +60,31 @@ class FileHtmlConverterTest {
 //        System.out.println(Arrays.toString(bytes));
     }
 
+    public String bytesToHexString(byte[] src){
+        StringBuilder stringBuilder = new StringBuilder("");
+        if (src == null || src.length <= 0) {
+            return null;
+        }
+        for (int i = 0; i < src.length; i++) {
+            int v = src[i] & 0xFF;
+            String hv = Integer.toHexString(v);
+            if (hv.length() < 2) {
+                stringBuilder.append(0);
+            }
+            stringBuilder.append(hv);
+        }
+        return stringBuilder.toString();
+    }
+
+    @Test
+    void convertTxtToHTML() {
+        File file = new File("file/temp/test.txt");
+        byte[] bytes = MulFileUtils.changeFileToBytes(file);
+        String out = bytesToHexString(bytes);
+        System.out.println(out);
+//        System.out.println(bytes[0] + " " + bytes[1] + " " + bytes[2]);
+//        System.out.println((byte)0xEE + " " + (byte)0xBB + " " + (byte)0xBF);
+//        String html = FileHtmlConverter.convertFileBytesToHTML(bytes, FileType.TXT);
+//        System.out.println(html);
+    }
 }

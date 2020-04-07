@@ -157,7 +157,7 @@ const UserInfo = {
 `,
     data: function () {
         // 初始用户数据为当前登陆用户
-        axios.get(HOST + "/user")
+        axios.get(HOST + "/user/")
             .then(res => {
                 if (res.data.code === 200) {
                     this.user = res.data.data;
@@ -223,8 +223,8 @@ const UserInfo = {
             });
         },
         saveAndPost() {
-            this.$data.loading = true;
-            axios.post(HOST + "/user/" + this.$data.user.id, this.$data.user)
+            this.loading = true;
+            axios.post(HOST + "/user/" + this.user.id, this.user)
                 .then(res => {
                     if (res.data.code === 200) {
                         this.$message({
@@ -304,7 +304,7 @@ const UserRecord = {
 </div>
 `,
     data() {
-        axios.get(HOST + "/history/user").then(res => {
+        axios.get(HOST + "/history/user/").then(res => {
                 if (res.data.code === 200) {
                     this.$data.user_records = res.data.data;
                     this.$data.page.pageCount = res.data.page.pageCount;
@@ -462,7 +462,7 @@ const DocInfo = {
     },
     methods: {
         searchSameTitleAsync(queryString, cb) {
-            if (queryString.length > 1) {
+            if (queryString.length > 0) {
                 axios.get(HOST + "/doc/list/title?title=" + queryString)
                     .then(res => {
                         if (res.data.code === 200) {
@@ -478,12 +478,11 @@ const DocInfo = {
             }
         },
         handleTitleSelect(item) {
-            this.$data.param.creator = item.creator;
-            this.$data.param.title = item.title;
+            this.param = item;
         },
         searchDoc() {
             this.$data.visible.card = true;
-            axios.get(HOST + "/doc/info/name?id=" + this.$data.param.id)
+            axios.get(HOST + "/doc/" + this.param.id + "?detail=true")
                 .then(res => {
                     if (res.data.code === 200) {
                         this.$data.document = res.data.data;

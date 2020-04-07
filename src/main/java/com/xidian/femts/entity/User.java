@@ -42,7 +42,7 @@ public class User implements Serializable {
 	 * 用户名，为员工名称+编号的形式
 	 */
    	@Column(name = "username" )
-	@Pattern(regexp = "^[\\u4e00-\\u9fa5]{2,6}\\d{1,3}$")
+//	@Pattern(regexp = "^[\\u4e00-\\u9fa5]{2,6}\\d{1,3}$")
 	private String username;
 
    	@Column(name = "password" )

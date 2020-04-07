@@ -54,7 +54,7 @@ public class HistoryController {
      * @param username 用户名
      * @return 返回 {@link OperationHistory} 数组表示所有操作记录，按时间先后排序（倒序）
      */
-    @GetMapping("/user/{username}")
+    @GetMapping(value = {"/user/{username}", "/user"})
     public ResultVO findUserHistoriesById(@PathVariable(value = "username", required = false) String username,
                                           @RequestParam(value = "pageNum", defaultValue = "1") @Min(1) int pageNum) {
         if (username == null) {
@@ -66,7 +66,7 @@ public class HistoryController {
             log.warn("[HISTORY] user id is not existed <username: {}>", username);
             return new ResultVO(BAD_REQUEST, "用户不存在");
         }
-        Page<History> histories = historyService.queryOperatorHistories(user.getId(), pageNum);
+        Page<History> histories = historyService.queryOperatorHistories(user.getId(), pageNum - 1);
         List<OperationHistory> records = new ArrayList<>(histories.getSize());
         histories.get().forEach(item -> {
             String name;
@@ -77,7 +77,7 @@ public class HistoryController {
                 // 否则表示操作对象为用户
                 name = userService.findUsernameById(item.getObjectId());
             }
-            records.add(new OperationHistory(item, name));
+            records.add(new OperationHistory(item, name, false));
         });
 
         return new PageableResultVO(records, histories.getTotalPages());
@@ -100,7 +100,7 @@ public class HistoryController {
         List<OperationHistory> records = new ArrayList<>(histories.getSize());
         histories.get().forEach(item -> {
             String tempName = userService.findUsernameById(item.getUserId());
-            records.add(new OperationHistory(item, tempName));
+            records.add(new OperationHistory(item, tempName, true));
         });
         return new PageableResultVO(records, histories.getTotalPages());
     }

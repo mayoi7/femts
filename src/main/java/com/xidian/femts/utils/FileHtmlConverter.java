@@ -3,6 +3,7 @@ package com.xidian.femts.utils;
 import com.xidian.femts.constants.FileType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.poi.hwpf.HWPFDocument;
@@ -165,8 +166,28 @@ public class FileHtmlConverter {
      * @param bytes 文件字节数组
      * @return 返回一个字符串，表示文件内容；如果发生异常则返回null
      */
+    @SneakyThrows
     private static String convertTxtToHTML(byte[] bytes) {
-        return new String(bytes);
+        // FIXME: 2020/4/6 对UTF-8文件存在一定的误判
+        // 默认编码为GBK
+        String charset = "GBK";
+        byte[] first3Bytes = new byte[3];
+        first3Bytes[0] = bytes[0];
+        first3Bytes[1] = bytes[1];
+        first3Bytes[2] = bytes[2];
+
+        if (first3Bytes[0] == (byte) 0xFF && first3Bytes[1] == (byte) 0xFE) {
+            //文件编码为 Unicode
+            charset = "UTF-16LE";
+        } else if (first3Bytes[0] == (byte) 0xFE
+                && first3Bytes[1] == (byte) 0xFF) {
+            //文件编码为 Unicode big endian
+            charset = "UTF-16BE";
+        } else if (first3Bytes[0] == (byte) 0xEE && first3Bytes[1] == (byte) 0xBB
+                && first3Bytes[2] == (byte) 0xBF) {
+            charset = "UTF-8"; //文件编码为 UTF-8
+        }
+        return new String(bytes, charset);
     }
 
     public static byte[] convertHTMLToWord2007(String html) {

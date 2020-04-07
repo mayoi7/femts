@@ -1,6 +1,7 @@
 package com.xidian.femts.vo;
 
 import com.xidian.femts.dto.Pager;
+import lombok.Data;
 
 /**
  * 可分页的结果数据
@@ -9,6 +10,7 @@ import com.xidian.femts.dto.Pager;
  * @date 9:44 2020/3/30
  * @email acerola.orion@foxmail.com
  */
+@Data
 public class PageableResultVO extends ResultVO {
 
     private Pager page;

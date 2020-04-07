@@ -188,13 +188,13 @@
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
                                aria-haspopup="true" :aria-expanded="show_setting" @click.stop="show_setting=!show_setting">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Test User</span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{user.username}}</span>
                             </a>
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown"
                                  :class="{show:show_setting}">
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="/index">
                                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    帐号信息（不可用）
+                                    主页
                                 </a>
                                 <a class="dropdown-item" href="#">
                                     <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
@@ -242,7 +242,16 @@
     let $app = new Vue({
         el: '#app',
         data () {
+            axios.get(HOST + "/user/")
+                .then(res => {
+                    if (res.data.code === 200) {
+                        this.user = res.data.data;
+                    } else {
+                        this.$message.error(res.data.data);
+                    }
+                }).catch(err => { this.$message.error(err); });
             return {
+                user: {},
                 show_alert: false,
                 show_setting: false,
             }

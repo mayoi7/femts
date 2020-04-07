@@ -45,4 +45,13 @@ class ManuscriptServiceTest {
         manuscript.setTitle("tf4");
         manuscriptRepository.save(manuscript);
     }
+
+    @Test
+    void updateFile() {
+        Manuscript ma = manuscriptRepository.findById(1L).get();
+//        ma.setCreatedAt(null);
+//        ma.setModifiedAt(null);
+        ma.setTitle("ttf1");
+        manuscriptRepository.save(ma);
+    }
 }

@@ -37,7 +37,7 @@ public class DocumentResp {
     /**  文档安全级别枚举值 */
     private int level;
 
-    /** 文档最近一编辑者姓名 */
+    /** 文档最近编辑者姓名 */
     private String editor;
 
     /** 文档最近编辑时间 */
