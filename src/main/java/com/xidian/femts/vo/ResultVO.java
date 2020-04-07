@@ -19,12 +19,12 @@ public class ResultVO {
     /**
      * 响应码
      */
-    private Integer code;
+    protected Integer code;
 
     /**
      * 响应体
      */
-    private Object data;
+    protected Object data;
 
     public ResultVO() {
         this.code = HttpStatus.OK.value();

@@ -6,10 +6,10 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>金融企业文稿追溯系统 - 管理员</title>
-    <link rel="stylesheet" href="../static/vendor/fontawesome-free/css/all.min.css">
-    <link rel="stylesheet" href="../static/vendor/element-ui/lib/theme-chalk/index.css">
-    <link rel="stylesheet" href="../static/css/femts.min.css">
-    <link rel="stylesheet" href="../static/css/index.css">
+    <link rel="stylesheet" href="/vendor/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="/vendor/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="/css/femts.min.css">
+    <link rel="stylesheet" href="/css/index.css">
     <style>
         a {
             text-decoration: none !important;
@@ -22,15 +22,31 @@
         #main_content {
             padding-left: 35px;
             padding-right: 35px;
+            margin-bottom: 45px;
         }
 
-        #main_content .user-info .el-card {
+        #main_content .card-info .el-card {
             width: 50rem;
             margin: 15px auto;
         }
 
         #main_content form.el-form input[disabled] {
             color: #0000007a;
+        }
+
+        #main_content .input-stable-append {
+            line-height: 36px;
+            padding-right: 12px;
+            padding-left: 10px;
+            background: #0000001c;
+            width: 100px;
+            font-size: 17px;
+            border-left: 1px solid #dcdfe6;
+            border-radius: 4px 0 0 4px;
+        }
+
+        .el-autocomplete.form-control {
+            padding: 0;
         }
     </style>
 </head>
@@ -172,20 +188,20 @@
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
                                aria-haspopup="true" :aria-expanded="show_setting" @click.stop="show_setting=!show_setting">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Test User</span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{user.username}}</span>
                             </a>
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown"
                                  :class="{show:show_setting}">
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="/index">
                                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    帐号信息（不可用）
+                                    主页
                                 </a>
                                 <a class="dropdown-item" href="#">
                                     <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
                                     设置（不可用）
                                 </a>
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="/api/1.0/auth/logout" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     登出
                                 </a>
@@ -203,14 +219,14 @@
     </div>
 </div>
 </body>
-<script src="../static/vendor/jquery/jquery.min.js"></script>
-<script src="../static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="../static/vendor/vue/vue.min.js"></script>
-<script src="../static/vendor/vue/vue-router.min.js"></script>
-<script src="../static/vendor/element-ui/lib/index.js"></script>
-<script src="../static/vendor/axios/axios.js"></script>
-<script src="../static/js/femts.min.js"></script>
-<script src="../static/js/admin.js"></script>
+<script src="/vendor/jquery/jquery.min.js"></script>
+<script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/vendor/vue/vue.min.js"></script>
+<script src="/vendor/vue/vue-router.min.js"></script>
+<script src="/vendor/element-ui/lib/index.js"></script>
+<script src="/vendor/axios/axios.js"></script>
+<script src="/js/femts.min.js"></script>
+<script src="/js/admin.js"></script>
 <script>
     let router = new VueRouter({
         routes: [
@@ -226,7 +242,16 @@
     let $app = new Vue({
         el: '#app',
         data () {
+            axios.get(HOST + "/user/")
+                .then(res => {
+                    if (res.data.code === 200) {
+                        this.user = res.data.data;
+                    } else {
+                        this.$message.error(res.data.data);
+                    }
+                }).catch(err => { this.$message.error(err); });
             return {
+                user: {},
                 show_alert: false,
                 show_setting: false,
             }

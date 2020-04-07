@@ -26,4 +26,12 @@ public enum UserState implements CodeEnum {
     private String alias;
 
     private int code;
+
+    /**
+     * 判断是否是管理员/超级管理员
+     * @return true：是；false：否
+     */
+    public boolean isAdmin() {
+        return this.getCode() > GENERAL.getCode();
+    }
 }

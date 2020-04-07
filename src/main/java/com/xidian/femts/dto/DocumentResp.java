@@ -34,7 +34,10 @@ public class DocumentResp {
     /** 文档创建时间 */
     private Date created;
 
-    /** 文档最近一次编辑者姓名 */
+    /**  文档安全级别枚举值 */
+    private int level;
+
+    /** 文档最近编辑者姓名 */
     private String editor;
 
     /** 文档最近编辑时间 */
@@ -44,6 +47,7 @@ public class DocumentResp {
         this.id = manuscript.getId();
         this.directoryId = manuscript.getDirectoryId();
         this.title = manuscript.getTitle();
+        this.level = manuscript.getLevel().getCode();
         this.created = manuscript.getCreatedAt();
         this.edited = manuscript .getModifiedAt();
 

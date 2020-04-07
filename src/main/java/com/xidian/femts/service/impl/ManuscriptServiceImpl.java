@@ -1,7 +1,6 @@
 package com.xidian.femts.service.impl;
 
 import com.xidian.femts.constants.FileType;
-import com.xidian.femts.constants.SecurityLevel;
 import com.xidian.femts.core.FileSigner;
 import com.xidian.femts.dto.JudgeResult;
 import com.xidian.femts.entity.Content;
@@ -13,6 +12,7 @@ import com.xidian.femts.repository.MarkRepository;
 import com.xidian.femts.service.InternalCacheService;
 import com.xidian.femts.service.ManuscriptService;
 import com.xidian.femts.utils.MulFileUtils;
+import com.xidian.femts.vo.SimpleDocInterface;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
+import java.util.List;
 
 import static com.xidian.femts.constants.HashAlgorithm.MD5;
 import static com.xidian.femts.utils.HashUtils.hashBytes;
@@ -64,7 +65,25 @@ public class ManuscriptServiceImpl implements ManuscriptService {
     }
 
     @Override
+    public Long findIdByFile(File file, FileType fileType) {
+        if (file == null) {
+            return null;
+        }
+        String hash = fileSigner.extractHashCode(file, fileType);
+        if (hash == null) {
+            return null;
+        }
+        Mark mark = markRepository.findByHash(hash);
+        if (mark == null) {
+            log.error("[MARK] file has sign code but not in database <hash: {}>", hash);
+            return null;
+        }
+        return mark.getManuscriptId();
+    }
+
+    @Override
     public JudgeResult<FileSigner.FileData> checkIfFileUploadedOrSetHash(File file, byte[] bytes, FileType type) {
+        // TODO: 2020/4/6 修改逻辑流程，允许多个文档引用同一内容
         // 该方法只会在文件上传时调用，数据不需要放到缓存里
         String hash;
         FileSigner.FileData fileData;
@@ -73,7 +92,7 @@ public class ManuscriptServiceImpl implements ManuscriptService {
             case WORD2003:
             case WORD2007:
             case OFD:
-                hash = fileSigner.extractHashCodeFromZipFile(file.getPath());
+                hash = fileSigner.extractHashCodeFromZipFile(file);
                 if (hash != null) {
                     return new JudgeResult<>(true, new FileSigner.FileData(bytes, hash));
                 } else {
@@ -84,6 +103,7 @@ public class ManuscriptServiceImpl implements ManuscriptService {
                 }
 
             // 单一格式文件处理
+            case RTF:
             case PDF:
                 hash = fileSigner.extractHashCodeFromSingleFile(file);
                 if (hash != null) {
@@ -108,35 +128,17 @@ public class ManuscriptServiceImpl implements ManuscriptService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    @CachePut(cacheNames = "doc", key = "#userId")
-    public Manuscript saveFile(Long userId, Long directoryId, Long contentId, String fileName, FileType fileType, String fileId,
-                               String hash, SecurityLevel level) {
-        // 保存时不知道文件id（数据表主键），缓存又是根据id来查询，所以无法添加缓存
-        Manuscript manuscript = Manuscript.builder()
-                .directoryId(directoryId).contentId(contentId).fileId(fileId)
-                .title(fileName).type(fileType).level(level)
-                .createdBy(userId).modifiedBy(userId)
-                .build();
-
+    @CachePut(cacheNames = "doc", key = "#result.id")
+    public Manuscript saveOrUpdateFile(Long id, Manuscript manuscript, String hash) {
+        manuscript.setId(id);
         Manuscript record = manuscriptRepository.saveAndFlush(manuscript);
         if (hash != null) {
             // 如果文件hash为空，说明文件未上传至文件系统，不需要存储文件标记
-            Mark mark = new Mark(record.getId(), fileType, hash);
+            Mark mark = new Mark(record.getId(), manuscript.getType(), hash);
             markRepository.save(mark);
         }
         return manuscript;
     }
-
-    @Override
-    public Manuscript updateFile(Long docId, Manuscript manuscript) {
-        if (docId == null) {
-            log.error("[DOC] doc id can not be null");
-            return null;
-        }
-        manuscript.setId(docId);
-        return manuscriptRepository.save(manuscript);
-    }
-
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -149,10 +151,10 @@ public class ManuscriptServiceImpl implements ManuscriptService {
 
     @Override
     @CachePut(cacheNames = "content", key = "#contentId")
-    public Long updateContent(Long contentId, String content) {
+    public Content updateContent(Long contentId, String content) {
         Content record = new Content(contentId, content);
         // 返回值必不为空
-        return contentRepository.save(record).getId();
+        return contentRepository.saveAndFlush(record);
     }
 
     @Cacheable(cacheNames = "mark", key = "#hash")
@@ -164,5 +166,10 @@ public class ManuscriptServiceImpl implements ManuscriptService {
     @Override
     public Long countManuscript() {
         return manuscriptRepository.count();
+    }
+
+    @Override
+    public List<SimpleDocInterface> fuzzyFindByTitle(String title) {
+        return manuscriptRepository.findByTitleLike(title);
     }
 }

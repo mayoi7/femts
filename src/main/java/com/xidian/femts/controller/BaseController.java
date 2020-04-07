@@ -1,6 +1,7 @@
 package com.xidian.femts.controller;
 
 import com.xidian.femts.vo.ResultVO;
+import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,6 +28,12 @@ public class BaseController {
         return "/index";
     }
 
+    @GetMapping("admin")
+    @RequiresRoles("admin")
+    public String admin() {
+        return "/admin";
+    }
+
     @GetMapping("error")
     public String error() {
         return "/error";
@@ -46,6 +53,11 @@ public class BaseController {
     @ResponseBody
     public ResultVO health() {
         return new ResultVO("success");
+    }
+
+    @GetMapping("test")
+    public String test() {
+        return "/test";
     }
 
     @GetMapping

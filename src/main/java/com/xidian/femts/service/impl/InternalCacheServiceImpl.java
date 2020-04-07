@@ -51,7 +51,7 @@ public class InternalCacheServiceImpl implements InternalCacheService {
     }
 
     @Override
-    @Cacheable(cacheNames = "doc", key = "#id")
+//    @Cacheable(cacheNames = "doc", key = "#id")
     public Manuscript findById_Manuscript(Long id) {
         return manuscriptRepository.findById(id).orElseGet(() -> {
             log.warn("[DOC] found manuscript is null <id: {}>", id);
@@ -60,7 +60,7 @@ public class InternalCacheServiceImpl implements InternalCacheService {
     }
 
     @Override
-    @Cacheable(cacheNames = "content", key = "#contentId")
+//    @Cacheable(cacheNames = "content", key = "#contentId")
     public String findContentById_Content(Long contentId) {
         return contentRepository.findContentById(contentId);
     }

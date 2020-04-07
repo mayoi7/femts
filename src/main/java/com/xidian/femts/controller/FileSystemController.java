@@ -2,17 +2,24 @@ package com.xidian.femts.controller;
 
 import com.xidian.femts.constants.*;
 import com.xidian.femts.core.FileSigner;
+import com.xidian.femts.dto.DocumentResp;
 import com.xidian.femts.dto.JudgeResult;
+import com.xidian.femts.entity.History;
 import com.xidian.femts.entity.Manuscript;
 import com.xidian.femts.entity.Mark;
 import com.xidian.femts.entity.User;
 import com.xidian.femts.service.*;
 import com.xidian.femts.utils.FileHtmlConverter;
+import com.xidian.femts.utils.MulFileUtils;
+import com.xidian.femts.utils.PackageUtils;
 import com.xidian.femts.utils.TokenUtils;
+import com.xidian.femts.vo.OperationHistory;
+import com.xidian.femts.vo.PageableResultVO;
 import com.xidian.femts.vo.ResultVO;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
+import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,9 +28,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.xidian.femts.utils.MulFileUtils.changeMulFileToFile;
-import static com.xidian.femts.utils.TokenUtils.generateSingleMark;
 import static org.springframework.http.HttpStatus.*;
 
 /**
@@ -75,12 +82,14 @@ public class FileSystemController {
      * </p>
      * @param mulFile Dropzone
      * @param directoryId 文档保存目录
+     * @param title 文档标题
+     * @param docId 文档id，可以没有（如果存在id则覆盖原文档）
      * @param level 文档安全级别（可视级别）
      * @return 文件上传是否成功的通知
      */
     @PostMapping("upload/{directoryId}")
-    public ResultVO upload(MultipartFile mulFile,
-                           @PathVariable("directoryId") Long directoryId,
+    public ResultVO upload(MultipartFile mulFile, @PathVariable("directoryId") Long directoryId,
+                           String title, Long docId,
                            @RequestParam(value = "level", defaultValue = "PUBLIC") SecurityLevel level) {
         // 1. 获取登陆用户的id
         String username = TokenUtils.getLoggedUserInfo();
@@ -115,18 +124,7 @@ public class FileSystemController {
         }
 
         // 3. 获取File类型对象
-        File file;
-        switch (fileType) {
-            case WORD2003:
-            case WORD2007:
-            case OFD:
-                file = saveFile2Local(mulFile);break;
-            case PDF:
-            case TXT:
-            case CUSTOM:
-            default:
-                file = changeMulFileToFile(mulFile);break;
-        }
+        File file = MulFileUtils.convertMulFileToFile(mulFile, fileType);
         if (file == null) {
             return new ResultVO(INTERNAL_SERVER_ERROR, "文件数据异常");
         }
@@ -142,7 +140,10 @@ public class FileSystemController {
                         mulFile.getOriginalFilename());
                 return new ResultVO(BAD_REQUEST, "文件中的标识符在数据库中不存在，请检查文件是否正确");
             }
-            return new ResultVO(cacheService.findById_Manuscript(mark.getManuscriptId()));
+            Manuscript foundDoc = cacheService.findById_Manuscript(mark.getManuscriptId());
+            String content = cacheService.findContentById_Content(foundDoc.getContentId());
+            String creator = userService.findUsernameById(foundDoc.getCreatedBy());
+            return new ResultVO(new DocumentResp(foundDoc, content, creator, username));
         }
         String hash = fileData.hash;
         bytes = fileData.bytes;
@@ -160,7 +161,26 @@ public class FileSystemController {
         // 6. 在数据库中保存文档信息
         String htmlContent = FileHtmlConverter.convertFileBytesToHTML(bytes, fileType);
         Long contentId = manuscriptService.saveContent(htmlContent);
-        Manuscript manuscript = manuscriptService.saveFile(userId, directoryId, contentId, mulFile.getName(), fileType, fileId, hash, level);
+
+        // 如果文档id不为空，则说明要覆盖数据库中原文档，否则创建新文档
+        Manuscript toSaved;
+        if (docId == null) {
+            toSaved = Manuscript.builder()
+                    .directoryId(directoryId).contentId(contentId).fileId(fileId)
+                    .title(title).type(fileType).level(level)
+                    .createdBy(userId).modifiedBy(userId)
+                    .build();
+        } else {
+            toSaved = cacheService.findById_Manuscript(docId);
+            if (toSaved == null) {
+                log.error("[FILE] doc id is not found <doc_id: {}>", docId);
+                return new ResultVO(BAD_REQUEST, "文档id不存在");
+            }
+            toSaved.setFileId(fileId);
+            toSaved.setContentId(contentId);
+            toSaved.setModifiedBy(userId);
+        }
+        Manuscript manuscript = manuscriptService.saveOrUpdateFile(docId, toSaved, hash);
         if (manuscript == null) {
             log.error("[FileSystem] save file to database failed <name: {}>", mulFile.getOriginalFilename());
             return new ResultVO(INTERNAL_SERVER_ERROR, "文件上传数据库失败");
@@ -177,25 +197,8 @@ public class FileSystemController {
 
         // 9. 添加操作记录
         historyService.addOptionHistory(userId, manuscript.getId(),true, Operation.CREATE);
-        return new ResultVO(CREATED, manuscript);
-    }
-
-    /**
-     * 将文件保存到本地
-     * @param mulFile 浏览器上传的文件数据
-     * @return 保存后的文件数据
-     */
-    private File saveFile2Local(MultipartFile mulFile) {
-        String basePath = "file/temp/";
-        // 上传文件重命名
-        String newName = generateSingleMark() + "-" + mulFile.getOriginalFilename();
-        try {
-            FileUtils.copyInputStreamToFile(mulFile.getInputStream(), new File(basePath, newName));
-        } catch (IOException ex) {
-            log.error("[FileSystem] file save to local failed <name: {}>" + mulFile.getOriginalFilename(), ex);
-            return null;
-        }
-        return new File(basePath + newName);
+        String creator = userService.findUsernameById(manuscript.getCreatedBy());
+        return new ResultVO(new DocumentResp(manuscript, htmlContent, creator, username));
     }
 
     /**
@@ -224,7 +227,7 @@ public class FileSystemController {
                     id, manuscript.getContentId());
             return new ResultVO(INTERNAL_SERVER_ERROR, "文档内容异常");
         }
-
+        content = PackageUtils.packageHtml(content);
         byte[] bytes = FileHtmlConverter.convertHTMLToWord2007(content);
         if (bytes == null) {
             log.error("[FILE] file converter error <content_id: {}>", manuscript.getContentId());
@@ -250,10 +253,43 @@ public class FileSystemController {
              */
             String fileId = storageService.upload(bytes, FileType.WORD2003.getName());
             manuscript.setFileId(fileId);
-            manuscriptService.updateFile(manuscript.getId(), manuscript);
+            manuscriptService.saveOrUpdateFile(manuscript.getId(), manuscript, null);
         }
         // 如向响应流中写入文件，则必须返回null
         return null;
     }
 
+    /**
+     * 根据上传的文件中的标识符进行溯源
+     * @param mulFile 文件对象
+     * @return 如果可以查询，则返回文件操作记录和分页数据
+     */
+    @PostMapping("/trace")
+    @RequiresRoles("admin")
+    public ResultVO traceFile(MultipartFile mulFile) {
+        if (mulFile == null) {
+            return new ResultVO(BAD_REQUEST, "文件不能为空");
+        }
+        FileType fileType = FileType.getFileType(mulFile);
+        if (fileType == null) {
+            log.warn("[FILE] file type extraction failed <file_name: {}>", mulFile.getOriginalFilename());
+            return new ResultVO(BAD_REQUEST, "文件格式异常");
+        }
+        File file = MulFileUtils.convertMulFileToFile(mulFile, fileType);
+        if (file == null) {
+            return new ResultVO(INTERNAL_SERVER_ERROR, "文件处理异常");
+        }
+        Long docId = manuscriptService.findIdByFile(file, fileType);
+        if (docId == null) {
+            return new ResultVO(BAD_REQUEST, "文件中不存在标识码");
+        }
+        // 只查询第一页数据，其余数据从HistoryController中对应的方法查询
+        Page<History> histories =  historyService.queryOperatedObjHistories(true, docId, 0);
+        List<OperationHistory> records = new ArrayList<>(histories.getSize());
+        histories.get().forEach(item -> {
+            String tempName = userService.findUsernameById(item.getUserId());
+            records.add(new OperationHistory(item, tempName, true));
+        });
+        return new PageableResultVO(records, histories.getTotalPages());
+    }
 }
