@@ -92,7 +92,7 @@ public class EmailService {
         String text = "<div>您好<br/>点击下方链接即可激活<br/>";
         String title = "【金融企业文稿追溯系统】帐号激活链接";
 
-        String href = "<a href=\"https://" + host + "/" + url + "\">点击此链接进行激活</a></div>";
+        String href = "<a href=\"http://" + host  + url + "\">点击此链接进行激活</a></div>";
 
         String content = text + href;
         sendHtmlMail(to, title, content);
@@ -108,7 +108,7 @@ public class EmailService {
         String text = "<div>您好<br/>点击下方链接即可重置密码，有效时间为30分钟<br/>";
         String title = "【金融企业文稿追溯系统】密码重置链接";
 
-        String href = "<a href=\"https://" + host + "/" + url + "\">点击此链接进行密码重置</a></div>";
+        String href = "<a href=\"http://" + host + url + "\">点击此链接进行密码重置</a></div>";
 
         String content = text + href;
         sendHtmlMail(to, title, content);

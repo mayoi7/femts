@@ -49,6 +49,16 @@ public class BaseController {
         return "/login";
     }
 
+    @GetMapping("forgot")
+    public String forgot() {
+        return "/forgot-password";
+    }
+
+    @GetMapping("/reset/password")
+    public String resetPassword() {
+        return "reset-password";
+    }
+
     @GetMapping("health")
     @ResponseBody
     public ResultVO health() {

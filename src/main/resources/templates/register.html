@@ -79,16 +79,16 @@
                                     <div class="error-info">{{errorMsg[5]}}</div>
                                 </div>
                             </div>
-                            <a href="javascript:void(0);" class="btn btn-primary btn-user btn-block" @click="submitForm">
+                            <button type="submit" class="btn btn-primary btn-user btn-block">
                                 注册帐号
-                            </a>
+                            </button>
                         </form>
                         <hr>
                         <div class="text-center">
-                            <a class="small" href="forgot-password.html">忘记密码?</a>
+                            <a class="small" href="/forgot">忘记密码?</a>
                         </div>
                         <div class="text-center">
-                            <a class="small" href="login.html">已有账户，登陆</a>
+                            <a class="small" href="/login">已有账户，登陆</a>
                         </div>
                     </div>
                 </div>
@@ -188,14 +188,17 @@
                 this.checkUsername($form.username);
                 this.checkPhone($form.phone);
                 this.checkJobId($form.jobId);
-                this.checkUsername($form.email);
+                this.checkEmail($form.email);
                 this.checkPassword($form.password);
 
                 this.checkRepeatPassword(this.$data.repeatPassword)
 
                 let $errors = this.$data.errorMsg;
                 for (let i = 0; i < $errors.length; i++) {
-                    if ($errors[i] !== null) return;
+                    if ($errors[i] !== null) {
+                        this.$message.error($errors[i]);
+                        return;
+                    }
                 }
 
                 axios.post("/api/1.0/auth/regist", this.form)

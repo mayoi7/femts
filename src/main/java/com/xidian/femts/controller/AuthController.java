@@ -3,6 +3,7 @@ package com.xidian.femts.controller;
 import com.alibaba.fastjson.JSON;
 import com.xidian.femts.constants.RedisKeys;
 import com.xidian.femts.constants.UserQueryCondition;
+import com.xidian.femts.constants.UserState;
 import com.xidian.femts.entity.User;
 import com.xidian.femts.service.LoginService;
 import com.xidian.femts.service.RedisService;
@@ -10,6 +11,7 @@ import com.xidian.femts.service.UserService;
 import com.xidian.femts.service.impl.EmailService;
 import com.xidian.femts.utils.TokenUtils;
 import com.xidian.femts.vo.LoginData;
+import com.xidian.femts.vo.RegistBody;
 import com.xidian.femts.vo.ResultVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.SecurityUtils;
@@ -23,8 +25,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
 
 import static com.xidian.femts.utils.NetworkUtils.getIpAddr;
 import static com.xidian.femts.utils.TokenUtils.compareActivationCode;
@@ -80,6 +80,8 @@ public class AuthController {
         User user = userService.findByCondition(name, method);
         if (user == null) {
             return new ResultVO(HttpStatus.BAD_REQUEST, "帐号不存在");
+        } else if(!user.getState().canLogin()) {
+            return new ResultVO(HttpStatus.BAD_REQUEST, "帐号未激活或被锁定");
         }
         // userId用于插入登陆记录
         Long userId = user.getId();
@@ -134,28 +136,24 @@ public class AuthController {
 
     /**
      * 用户注册接口
-     * @param username 用户名
-     * @param jobId 工号
-     * @param password 密码（明文）
-     * @param phone 手机号
-     * @param email 邮箱
+     * @param registBody 注册数据
      * @return {@link ResultVO}通知信息
      */
     @PostMapping("/regist")
-    public ResultVO registered(@NotBlank String username, @NotBlank Long jobId,
-                               @NotBlank String password, @NotBlank String phone,
-                               @NotBlank @Email(regexp = "^(\\w-*\\.*)+@(\\w-?)+(\\.\\w{2,})+$") String email) {
+    public ResultVO registered(@RequestBody RegistBody registBody) {
         // 先校验参数合法性
-        if (!validUsername(username) || !validPassword(password) || !validPhone(phone)) {
+        if (!validUsername(registBody.getUsername())
+                || !validPassword(registBody.getPassword())
+                || !validPhone(registBody.getPhone())) {
             return new ResultVO("参数不合规范，请重新检查");
         }
 
         // 加密密码
-        String encrypted = TokenUtils.encryptPassword(password, username);
+        String encrypted = TokenUtils.encryptPassword(registBody.getPassword(), registBody.getUsername());
 
         User user = User.builder()
-                .username(username).password(encrypted)
-                .jobId(jobId).phone(phone).email(email)
+                .username(registBody.getUsername()).password(encrypted)
+                .jobId(registBody.getJobId()).phone(registBody.getPhone()).email(registBody.getEmail())
                 .build();
         User record = userService.saveUser(user);
         if (record == null) {
@@ -165,7 +163,7 @@ public class AuthController {
 
         // 发激活邮件
         String url = "/api/1.0/auth/active?id=" + user.getId() + "&code=" + generateUserActivationCode(user);
-        emailService.sendActiveMail(email, url);
+        emailService.sendActiveMail(record.getEmail(), url);
 
         // 注册人数自增
         redisService.incrementAndGet(RedisKeys.REGIST_COUNT_KEY);
@@ -193,6 +191,9 @@ public class AuthController {
                     "<<users may manually splice the activation url>>", id, code);
             throw new RuntimeException("id不存在，用户可能手动拼接了激活链接");
         }
+
+        user.setState(UserState.GENERAL);
+        userService.updateUser(user.getId(), user);
 
         // 激活人数自增
         redisService.incrementAndGet(RedisKeys.ACTIVED_COUNT_KEY);
