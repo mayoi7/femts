@@ -12,6 +12,7 @@ import com.xidian.femts.service.impl.EmailService;
 import com.xidian.femts.shiro.ShiroSessionListener;
 import com.xidian.femts.utils.EntityUtils;
 import com.xidian.femts.utils.TokenUtils;
+import com.xidian.femts.utils.ValidUtils;
 import com.xidian.femts.vo.ResultVO;
 import com.xidian.femts.vo.SystemCount;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpSession;
+import javax.validation.constraints.Email;
 
 import static com.xidian.femts.constants.RedisKeys.*;
 import static com.xidian.femts.constants.UserQueryCondition.*;
@@ -248,8 +250,11 @@ public class UserController {
         }
     }
 
-    @PostMapping("password")
+    @PostMapping("/password")
     public ResultVO resetPassword(@RequestParam("pwd") String password, HttpSession session) {
+        if (ValidUtils.validPassword(password)) {
+            return new ResultVO("密码格式不正确");
+        }
         // 获取session中的数据，既验证用户资格，又拿到用户身份
         String username = (String) session.getAttribute(RedisKeys.PASSWORD_RESET_KEY);
         if (username == null) {
@@ -282,7 +287,8 @@ public class UserController {
      * @return code为200说明请求重置成功，否则说明未发送重置邮件，请重试
      */
     @PostMapping("/password/reset")
-    public ModelAndView requestResetPassword(@RequestParam("email") String email) {
+    public ResultVO requestResetPassword(@RequestParam("email")
+                                             @Email(regexp = "^(\\w-*\\.*)+@(\\w-?)+(\\.\\w{2,})+$") String email) {
         User user = userService.findByCondition(email, UserQueryCondition.EMAIL);
         if (user == null) {
             log.error("[USER] user not found <username: {}>", email);
@@ -295,7 +301,7 @@ public class UserController {
         redisService.set(RedisKeys.PASSWORD_RESET_KEY + username, code, 60*10);
         emailService.sendResetPasswordMail(email, "/api/1.0/user/password/redirect?code=" + code
                 + "&username=" + username);
-        return new ModelAndView("redirect:/login");
+        return ResultVO.SUCCESS;
     }
 
     /**
@@ -303,7 +309,7 @@ public class UserController {
      * （但是缓存的清除不在这一步）
      * @param code 校验凭证，需要和缓存中做对比
      * @param username 用户名
-     * @return 重定向到新页面
+     * @return 返回成功时，跳转到密码重置页面，路径为/reset/password
      */
     @GetMapping("/password/redirect")
     public ModelAndView redirectPasswordResetPage(@RequestParam("code") String code,
@@ -318,6 +324,6 @@ public class UserController {
         }
         // 拿缓存key作为session key
         session.setAttribute(RedisKeys.PASSWORD_RESET_KEY, username);
-        return new ModelAndView("redirect:/password/reset");
+        return new ModelAndView("redirect:/reset/password");
     }
 }

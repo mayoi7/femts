@@ -60,10 +60,17 @@ public class ShiroConfig {
         // 设置拦截器
         Map<String, String> filterChainDefinitionMap = new LinkedHashMap<>();
 
-        // 基础功能接口公开
+        // 基础页面公开
         filterChainDefinitionMap.put("/error/**", "anon");
         filterChainDefinitionMap.put("/login/**", "anon");
         filterChainDefinitionMap.put("/register/**", "anon");
+        filterChainDefinitionMap.put("/forgot/**", "anon");
+        filterChainDefinitionMap.put("/reset/password/**", "anon");
+
+        // 基础页面相关接口公开
+        filterChainDefinitionMap.put("/api/1.0/user/defection/**", "anon");
+        filterChainDefinitionMap.put("/api/1.0/user/password/**", "anon");
+
 
         // 健康检查接口公开
         filterChainDefinitionMap.put("/health/**", "anon");

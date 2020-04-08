@@ -16,7 +16,7 @@ import lombok.Getter;
 public enum UserState implements CodeEnum {
 
     LOCKED("locked", "被锁定", 0),
-    INACTIVATED("INACTIVATED", "未激活", 1),
+    INACTIVATED("inactivated", "未激活", 1),
     GENERAL("normal", "普通用户", 2),
     ADMIN("admin", "管理员", 3),
     SUPER_ADMIN("sp_admin", "超级管理员", 4);
@@ -33,5 +33,13 @@ public enum UserState implements CodeEnum {
      */
     public boolean isAdmin() {
         return this.getCode() > GENERAL.getCode();
+    }
+
+    /**
+     * 判断是否可以登陆
+     * @return true：是；false：否
+     */
+    public boolean canLogin() {
+        return this.getCode() > INACTIVATED.getCode();
     }
 }

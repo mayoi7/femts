@@ -2,6 +2,7 @@ package com.xidian.femts.utils;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.springframework.util.StringUtils;
 
 import java.util.regex.Pattern;
 
@@ -54,6 +55,9 @@ public class ValidUtils {
      * @return true：验证通过；false：验证不通过
      */
     public static boolean validPassword(String password) {
+        if (StringUtils.isEmpty(password)) {
+            return false;
+        }
         return validByRegex(password, REG_PASSWORD);
     }
 }
