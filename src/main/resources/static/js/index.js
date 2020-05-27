@@ -148,13 +148,13 @@ let $app = new Vue({
                 inputErrorMessage: '名称中不能包含非中文或英文的字符'
             }).then(({ value }) => {
                 // 这里是向后台提交的数据，非vue绑定的数据
-                const postData = {
-                    id: node.id,
-                    name: value,
-                    children: [],
-                    visible: false
-                };
-                axios.post(HOST + "/doc/directory/append/" + data.id, postData)
+                // const postData = {
+                //     id: node.id,
+                //     name: value,
+                //     children: [],
+                //     visible: false
+                // };
+                axios.post(HOST + "/doc/directory/append/" + data.id + "?name=" + value)
                     .then(res => {
                         if (res.data.code === 200) {
                             // 如果返回200，则返回的数据为新目录的id
@@ -266,7 +266,7 @@ let $app = new Vue({
         download() {
             // 关闭弹窗
             this.show_download_dialog = false;
-            window.location.href = HOST + "/file/download/" + this.doc.id;
+            window.location.href = HOST + "/file/download/" + this.doc.id + "?type=" + FILE_TYPE[this.doc.type];
         },
         cancelSave() {
             this.doc = this.doc_backup;

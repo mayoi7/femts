@@ -45,6 +45,7 @@ public class InternalCacheServiceImpl implements InternalCacheService {
         return directoryRepository.findNameById(id);
     }
 
+    @Override
     @Cacheable(cacheNames = "directoryNameVisible", key = "#id + '$' + #userId")
     public String findNameByIdIfVisible_Directory(Long id, Long userId) {
         return directoryRepository.findNameByIdIfVisible(id, userId);

@@ -249,15 +249,23 @@ public class ManuscriptController {
      */
     private Manuscript updateFile(Manuscript original, DocumentReq document, Long editorId) {
         // 1. 更新数据库中content表
-        Content content = manuscriptService
-                .updateContent(original.getContentId(), document.getContent());
-        if (!content.getId().equals(original.getContentId())) {
-            // 如果更新后的内容id不等于更新前的内容id，说明之前文档的内容id为空或是错误的
-            log.error("[DOC] doc content id is wrong before <before_content_id: {}, after: {}>",
-                    original.getContentId(), content.getId());
-            // 目前直接返回空，如果该类情况出现，需要检查是否之前的设计出现了逻辑漏洞，
-            // 而不应当掩饰这一错误，而应即使将错误抛出，避免导致更严重的错误
-            return null;
+        Content content = null;
+        if (original.getContentId() == null) {
+            // 说明是新创建文档
+            Long contentId = manuscriptService.saveContent(document.getContent());
+            original.setContentId(contentId);
+            content = new Content(contentId, document.getContent());
+        } else {
+            content = manuscriptService
+                    .updateContent(original.getContentId(), document.getContent());
+            if (!content.getId().equals(original.getContentId())) {
+                // 如果更新后的内容id不等于更新前的内容id，说明之前文档的内容id为空或是错误的
+                log.error("[DOC] doc content id is wrong before <before_content_id: {}, after: {}>",
+                        original.getContentId(), content.getId());
+                // 目前直接返回空，如果该类情况出现，需要检查是否之前的设计出现了逻辑漏洞，
+                // 而不应当掩饰这一错误，而应即使将错误抛出，避免导致更严重的错误
+                return null;
+            }
         }
         // 2. 修改其他信息
         original.setTitle(document.getTitle());
@@ -276,7 +284,10 @@ public class ManuscriptController {
                 // 自定义文件类型扩展名为空（可能会导致fastdfs错误，待测试）
                 storageService.upload(bytes, FileType.CUSTOM.getName());
             } else {
-                storageService.modify(manuscript.getFileId(), bytes, FileType.CUSTOM.getName());
+                // 更新文件id
+                String newFileId = storageService.modify(manuscript.getFileId(), bytes, FileType.CUSTOM.getName());
+                manuscript.setFileId(newFileId);
+                manuscriptService.saveOrUpdateFile(manuscript.getId(), manuscript, null);
             }
         }
         // 5. 添加操作记录
@@ -459,7 +470,7 @@ public class ManuscriptController {
      */
     @PostMapping("/directory/append/{id}")
     public ResultVO appendDirectory(@PathVariable("id") Long id, @RequestParam("name") String name,
-                                    @RequestParam("visible") boolean visible) {
+                                    @RequestParam(value = "visible", required = false) boolean visible) {
         String username = TokenUtils.getLoggedUserInfo();
         User user = userService.findByCondition(username, UserQueryCondition.USERNAME);
         if (user == null) {

@@ -83,7 +83,6 @@ public class ManuscriptServiceImpl implements ManuscriptService {
 
     @Override
     public JudgeResult<FileSigner.FileData> checkIfFileUploadedOrSetHash(File file, byte[] bytes, FileType type) {
-        // TODO: 2020/4/6 修改逻辑流程，允许多个文档引用同一内容
         // 该方法只会在文件上传时调用，数据不需要放到缓存里
         String hash;
         FileSigner.FileData fileData;
