@@ -25,6 +25,9 @@ public class DocumentResp {
     /** 文档标题 */
     private String title;
 
+    /** 文档类型码 */
+    private Integer type;
+
     /** 文档html内容 */
     private String content;
 
@@ -47,6 +50,7 @@ public class DocumentResp {
         this.id = manuscript.getId();
         this.directoryId = manuscript.getDirectoryId();
         this.title = manuscript.getTitle();
+        this.type = manuscript.getType().getCode();
         this.level = manuscript.getLevel().getCode();
         this.created = manuscript.getCreatedAt();
         this.edited = manuscript .getModifiedAt();

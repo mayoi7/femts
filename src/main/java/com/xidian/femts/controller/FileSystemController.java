@@ -176,6 +176,7 @@ public class FileSystemController {
                 log.error("[FILE] doc id is not found <doc_id: {}>", docId);
                 return new ResultVO(BAD_REQUEST, "文档id不存在");
             }
+            toSaved.setType(fileType);
             toSaved.setFileId(fileId);
             toSaved.setContentId(contentId);
             toSaved.setModifiedBy(userId);
@@ -185,18 +186,21 @@ public class FileSystemController {
             log.error("[FileSystem] save file to database failed <name: {}>", mulFile.getOriginalFilename());
             return new ResultVO(INTERNAL_SERVER_ERROR, "文件上传数据库失败");
         }
-        // 7. 在目录表中记录信息
-        if (directoryService.appendManuscript(directoryId, manuscript.getId()) == null) {
-            // 只打印log，如果影响较大可以后期加上重试操作，但不要中止整个流程
-            log.error("[DIR] directory append failed <parent_id: {}, doc_id: {}>",
-                    directoryId, manuscript.getId());
+        if (docId == null) {
+            // 7. 在目录表中记录信息
+            if (directoryService.appendManuscript(directoryId, manuscript.getId()) == null) {
+                // 只打印log，如果影响较大可以后期加上重试操作，但不要中止整个流程
+                log.error("[DIR] directory append failed <parent_id: {}, doc_id: {}>",
+                        directoryId, manuscript.getId());
+            }
+            // 8. 文档数自增
+            redisService.incrementAndGet(RedisKeys.DOCUMENT_COUNT_KEY);
+            // 9. 添加操作记录
+            historyService.addOptionHistory(userId, manuscript.getId(),true, Operation.CREATE);
+        } else {
+            historyService.addOptionHistory(userId, manuscript.getId(),true, Operation.UPLOAD);
         }
 
-        // 8. 文档数自增
-        redisService.incrementAndGet(RedisKeys.DOCUMENT_COUNT_KEY);
-
-        // 9. 添加操作记录
-        historyService.addOptionHistory(userId, manuscript.getId(),true, Operation.CREATE);
         String creator = userService.findUsernameById(manuscript.getCreatedBy());
         return new ResultVO(new DocumentResp(manuscript, htmlContent, creator, username));
     }
@@ -220,21 +224,41 @@ public class FileSystemController {
         response.setHeader("Content-Type", "application/octet-stream;charset=utf-8");
         response.setContentType("application/force-download");
 
-        String content = cacheService.findContentById_Content(manuscript.getContentId());
-        // 可以内容允许为空字符串，但是不能为空值
-        if (content == null) {
-            log.error("[CONTENT] doc content is not exist <doc_id: {}, content_id: {}>",
-                    id, manuscript.getContentId());
-            return new ResultVO(INTERNAL_SERVER_ERROR, "文档内容异常");
+        byte[] bytes;
+        String title;
+        // 如果下载格式与文件上传的格式一致，且上传过文件服务器，则从fastdfs处下载，
+        // 否则根据html生成doc文件
+        if (manuscript.getType() == type && manuscript.getFileId() != null) {
+            bytes = storageService.download(manuscript.getFileId());
+            title = manuscript.getTitle() + "." + manuscript.getType().getName();
+        } else {
+            String content = cacheService.findContentById_Content(manuscript.getContentId());
+            // 可以内容允许为空字符串，但是不能为空值
+            if (content == null) {
+                log.error("[CONTENT] doc content is not exist <doc_id: {}, content_id: {}>",
+                        id, manuscript.getContentId());
+                return new ResultVO(INTERNAL_SERVER_ERROR, "文档内容异常");
+            }
+            content = PackageUtils.packageHtml(content);
+            bytes = FileHtmlConverter.convertHTMLToWord2007(content);
+            if (bytes == null) {
+                log.error("[FILE] file converter error <content_id: {}>", manuscript.getContentId());
+                return new ResultVO(INTERNAL_SERVER_ERROR, "文件下载异常");
+            }
+            title = manuscript.getTitle() + ".doc";
+            if (manuscript.getFileId() == null) {
+                /* 文件id不存在，说明文件未上传到fastdfs，
+                 * 即文件是用户手动创建的（用户上传的文件都会自动执行将文件上传到服务器的操作），
+                 * 我们目前统一将文件保存为doc文件格式，用户可以在word中自行进行格式转换。
+                 * 注意，因为用户大概率会自行转换格式，且文档并非用户上传，
+                 * 所以不在文件中埋标识符，而是直接返回给用户原本的文档
+                 */
+                String fileId = storageService.upload(bytes, FileType.WORD2003.getName());
+                manuscript.setFileId(fileId);
+                manuscriptService.saveOrUpdateFile(manuscript.getId(), manuscript, null);
+            }
         }
-        content = PackageUtils.packageHtml(content);
-        byte[] bytes = FileHtmlConverter.convertHTMLToWord2007(content);
-        if (bytes == null) {
-            log.error("[FILE] file converter error <content_id: {}>", manuscript.getContentId());
-            return new ResultVO(INTERNAL_SERVER_ERROR, "文件下载异常");
-        }
-        // 一期默认全部下载为doc格式
-        String title = manuscript.getTitle() + ".doc";
+
         try(OutputStream os = response.getOutputStream()) {
             os.write(bytes);
             response.addHeader("Content-Disposition", "attachment;filename=" + title + ";filename*=utf-8''"
@@ -242,18 +266,6 @@ public class FileSystemController {
         } catch (IOException ioe) {
             log.error("[IO] get response output stream failed <response: {}>", response, ioe);
             throw new IOException();
-        }
-
-        if (manuscript.getFileId() == null) {
-            /* 文件id不存在，说明文件未上传到fastdfs，
-             * 即文件是用户手动创建的（用户上传的文件都会自动执行将文件上传到服务器的操作），
-             * 我们目前统一将文件保存为doc文件格式，用户可以在word中自行进行格式转换。
-             * 注意，因为用户大概率会自行转换格式，且文档并非用户上传，
-             * 所以不在文件中埋标识符，而是直接返回给用户原本的文档
-             */
-            String fileId = storageService.upload(bytes, FileType.WORD2003.getName());
-            manuscript.setFileId(fileId);
-            manuscriptService.saveOrUpdateFile(manuscript.getId(), manuscript, null);
         }
         // 如向响应流中写入文件，则必须返回null
         return null;

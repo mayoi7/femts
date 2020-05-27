@@ -149,7 +149,7 @@ public class FileSigner {
             return null;
         } else {
             // 过滤掉开头的 $ 和结尾的 .xml
-            return fileHash.substring(1, fileHash.length() - 5);
+            return fileHash.substring(1, fileHash.length() - 4);
         }
     }
 
