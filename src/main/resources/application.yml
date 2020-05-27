@@ -1,3 +1,4 @@
+
 spring:
   profiles:
     active: dev
@@ -14,3 +15,7 @@ spring:
     show-sql: true
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
+server:
+  tomcat:
+    max-connections: 20000
+    max-threads: 2000

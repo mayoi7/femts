@@ -1,5 +1,6 @@
 package com.xidian.femts.core;
 
+import com.xidian.femts.utils.MulFileUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,10 @@ class FileSignerTest {
 
     @Test
     void signZipFile() {
+        String path = "file/bug/testBack.doc";
+        File file = new File(path);
+        byte[] bytes = MulFileUtils.changeFileToBytes(file);
+        signer.signZipFile(path, bytes);
     }
 
     @Test

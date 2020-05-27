@@ -186,7 +186,7 @@
                 <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
                      aria-labelledby="alertsDropdown" :class="{show:show_alert}">
                     <h6 class="dropdown-header">
-                        Alerts Center
+                        通知中心
                     </h6>
                     <a class="dropdown-item d-flex align-items-center" href="#">
                         <div class="mr-3">
@@ -195,11 +195,11 @@
                             </div>
                         </div>
                         <div>
-                            <div class="small text-gray-500">December 12, 2019</div>
-                            <span class="font-weight-bold">A new monthly report is ready to download!</span>
+                            <div class="small text-gray-500">April 12, 2020</div>
+                            <span class="font-weight-bold">测试消息01</span>
                         </div>
                     </a>
-                    <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
+                    <a class="dropdown-item text-center small text-gray-500" href="#">显示全部</a>
                 </div>
             </li>
             <div class="topbar-divider d-none d-sm-block"></div>
@@ -268,13 +268,13 @@
                             :visible.sync="show_download_dialog"
                             width="39%">
                         <el-radio-group v-model="file_type">
-                            <el-radio :label="0">doc</el-radio>
-                            <el-radio :label="1" disabled>docx</el-radio>
-                            <el-radio :label="2" disabled>txt</el-radio>
-                            <el-radio :label="3" disabled>pdf</el-radio>
-                            <el-radio :label="4" disabled>ofd</el-radio>
-                            <el-radio :label="5" disabled>rtf</el-radio>
-                            <el-radio :label="6" disabled>无格式</el-radio>
+                            <el-radio :label="0">默认</el-radio>
+                            <el-radio :label="1" :disabled="doc.type !== 1">docx</el-radio>
+                            <el-radio :label="2" :disabled="doc.type !== 2">txt</el-radio>
+                            <el-radio :label="3" :disabled="doc.type !== 3">pdf</el-radio>
+                            <el-radio :label="4" :disabled="doc.type !== 4">ofd</el-radio>
+                            <el-radio :label="5" :disabled="doc.type !== 5">rtf</el-radio>
+                            <el-radio :label="6" :disabled="doc.type !== 6">无格式</el-radio>
                         </el-radio-group>
                         <span slot="footer" class="dialog-footer">
                         <el-button @click="show_download_dialog = false">取消</el-button>
