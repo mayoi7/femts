@@ -21,7 +21,7 @@
         <shiro.cache.verison>1.3.2</shiro.cache.verison>
         <fastjson.version>1.2.58</fastjson.version>
         <poi.curvesapi.version>1.04</poi.curvesapi.version>
-        <poi.version>3.13</poi.version>
+        <poi.version>4.1.2</poi.version>
         <poi.docreport.version>1.0.6</poi.docreport.version>
         <fastdfs.version>1.29-SNAPSHOT</fastdfs.version>
         <guava.version>28.1-jre</guava.version>
