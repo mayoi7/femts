@@ -24,7 +24,7 @@
         <poi.version>3.13</poi.version>
         <poi.docreport.version>1.0.6</poi.docreport.version>
         <fastdfs.version>1.29-SNAPSHOT</fastdfs.version>
-        <guava.version>28.1-jre</guava.version>
+        <guava.version>29.0-jre</guava.version>
         <zip4j.version>2.1.4</zip4j.version>
         <commons-io.version>2.6</commons-io.version>
         <pdf2dom.version>1.7</pdf2dom.version>
